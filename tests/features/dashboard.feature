@@ -11,7 +11,7 @@ Feature: Dashboard
       | AAPL    | USD      | 1      | 80    |
       | ESTC    | USD      | 3      | 20    |
     When I check my dashboard
-    Then I should see "Total Buying Price: 200 USD"
+    Then I should see "Total Buying Price: 200.00 USD"
 
   Scenario: Total Value over Time
     Given I have the following stock transactions
@@ -27,7 +27,7 @@ Feature: Dashboard
       | AAPL    | 80    |
       | ESTC    | 19    |
     When I check my dashboard
-    Then I should see "Total Value: 137 USD"
+    Then I should see "Total Value: 137.00 USD"
 
   Scenario: Total Positions
     Given I have the following stock transactions

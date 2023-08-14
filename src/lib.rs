@@ -143,9 +143,9 @@ impl std::fmt::Display for Dashboard {
         write!(
             f,
             "Total Buying Price: {} {}\nTotal Value: {} {}\nAmount of positions: {}\nTotal dividend: {} {}",
-            self.total_buying_price,
+            format!("{:.2}", self.total_buying_price),
             self.currency,
-            self.total_value(),
+            format!("{:.2}", self.total_value()),
             self.currency,
             self.number_of_positions,
             format!("{:.2}", self.total_dividend),
