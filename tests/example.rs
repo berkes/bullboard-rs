@@ -1,6 +1,6 @@
-use cucumber::{gherkin::Step, given, when, World, then};
-
-use bullboard::{StocksBought, Event, Dashboard};
+use bullboard::{Dashboard, Event, PriceObtained, StocksBought};
+use chrono::{NaiveDate, NaiveDateTime};
+use cucumber::{gherkin::Step, given, then, when, World};
 
 #[derive(Debug, Default, World)]
 pub struct BullBoardWorld {
@@ -34,7 +34,36 @@ fn i_check_my_dashboard(world: &mut BullBoardWorld) {
 
 #[then(expr = "I should see {string}")]
 fn i_should_see(world: &mut BullBoardWorld, state: String) {
-    assert!(world.output.contains(&state));
+    assert!(
+        world.output.contains(&state),
+        "expected to find {} in {}",
+        state,
+        &world.output
+    );
+}
+
+#[when(expr = "the prices change to the following values on {string}")]
+fn the_prices_change_to_the_following_values_on(
+    world: &mut BullBoardWorld,
+    date: String,
+    step: &Step,
+) {
+    if let Some(table) = step.table() {
+        let fetched_at: NaiveDateTime = NaiveDate::parse_from_str(&date, "%d-%m-%Y")
+            .expect("parse date")
+            .and_hms_opt(0, 0, 0)
+            .expect("convert to datetime");
+
+        for row in table.rows.iter().skip(1) {
+            let symbol = &row[0];
+            let price = &row[1];
+            world.events.push(Event::PriceObtained(PriceObtained::new(
+                price.parse::<f64>().expect("parse price"),
+                symbol.to_string(),
+                fetched_at,
+            )));
+        }
+    }
 }
 
 // This runs before everything else, so you can setup things here.

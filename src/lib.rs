@@ -1,5 +1,5 @@
-use std::collections::HashMap;
-use chrono::NaiveDateTime; // You'll need to add the chrono crate to your Cargo.toml
+use chrono::NaiveDateTime;
+use std::collections::HashMap; // You'll need to add the chrono crate to your Cargo.toml
 
 #[derive(Debug, Clone)]
 pub enum Event {
@@ -32,6 +32,16 @@ pub struct PriceObtained {
     price: f64,
     ticker: String,
     currency: String,
+}
+impl PriceObtained {
+    pub fn new(price: f64, ticker: String, obtained_at: NaiveDateTime) -> Self {
+        PriceObtained {
+            price,
+            ticker,
+            obtained_at,
+            currency: "".to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -102,17 +112,19 @@ impl Dashboard {
             self.currency = event.currency.clone();
         }
 
-        let total_stock_value = self.tickers.get(&event.ticker).unwrap_or(&0.0) * event.price;
-        *self.total_value_at
-            .get_mut(&event.obtained_at)
-            .unwrap_or(&mut 0.0) += total_stock_value;
+        // Add the value of the stock at the time of the price obtained event
+        let total_stock_value = self.total_value_at.get(&event.obtained_at).unwrap_or(&0.0)
+            + self.tickers.get(&event.ticker).unwrap_or(&0.0) * event.price;
+
+        self.total_value_at
+            .insert(event.obtained_at, total_stock_value);
     }
 
     fn handle_dividend_paid(&mut self, event: &DividendPaid) {
         if self.currency.is_empty() {
             self.currency = event.currency.clone();
         }
-        
+
         self.total_dividend += event.amount * self.tickers.get(&event.ticker).unwrap_or(&0.0);
     }
 }

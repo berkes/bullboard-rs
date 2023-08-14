@@ -19,8 +19,18 @@ fn main() {
 
     let dashboard = Dashboard::new(events);
 
-    println!("Total Buying Price: {} {}", dashboard.total_buying_price, dashboard.currency);
-    println!("Total Value: {} {}", dashboard.total_value(), dashboard.currency);
+    println!(
+        "Total Buying Price: {} {}",
+        dashboard.total_buying_price, dashboard.currency
+    );
+    println!(
+        "Total Value: {} {}",
+        dashboard.total_value(),
+        dashboard.currency
+    );
     println!("Number of Positions: {}", dashboard.number_of_positions);
-    println!("Total Dividend: {} {}", dashboard.total_dividend, dashboard.currency);
+    println!(
+        "Total Dividend: {} {}",
+        dashboard.total_dividend, dashboard.currency
+    );
 }
