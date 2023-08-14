@@ -1,6 +1,4 @@
-mod lib;
-
-use lib::{Dashboard, Event, StocksBought};
+use bullboard::{Dashboard, Event, StocksBought};
 
 fn main() {
     // Simulating events

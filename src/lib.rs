@@ -65,7 +65,7 @@ impl Dashboard {
         };
 
         for event in &dashboard.events.clone() {
-            dashboard.handle_event(&event);
+            dashboard.handle_event(event);
         }
 
         dashboard
@@ -77,9 +77,9 @@ impl Dashboard {
 
     fn handle_event(&mut self, event: &Event) {
         match event {
-            Event::StocksBought(event) => self.handle_stocks_bought(&event),
-            Event::PriceObtained(event) => self.handle_price_obtained(&event),
-            Event::DividendPaid(event) => self.handle_dividend_paid(&event),
+            Event::StocksBought(event) => self.handle_stocks_bought(event),
+            Event::PriceObtained(event) => self.handle_price_obtained(event),
+            Event::DividendPaid(event) => self.handle_dividend_paid(event),
         }
     }
 
