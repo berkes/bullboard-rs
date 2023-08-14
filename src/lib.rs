@@ -50,6 +50,15 @@ pub struct DividendPaid {
     ticker: String,
     currency: String,
 }
+impl DividendPaid {
+    pub fn new(amount: f64, ticker: String, currency: String) -> Self {
+        DividendPaid {
+            amount,
+            ticker,
+            currency,
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct Dashboard {
@@ -139,7 +148,7 @@ impl std::fmt::Display for Dashboard {
             self.total_value(),
             self.currency,
             self.number_of_positions,
-            format!("{:.2}", (self.total_dividend / 100.0)),
+            format!("{:.2}", self.total_dividend),
             self.currency
         )
     }

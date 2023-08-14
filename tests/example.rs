@@ -1,4 +1,4 @@
-use bullboard::{Dashboard, Event, PriceObtained, StocksBought};
+use bullboard::{Dashboard, DividendPaid, Event, PriceObtained, StocksBought};
 use chrono::{NaiveDate, NaiveDateTime};
 use cucumber::{gherkin::Step, given, then, when, World};
 
@@ -32,16 +32,6 @@ fn i_check_my_dashboard(world: &mut BullBoardWorld) {
     world.output = dashboard.to_string();
 }
 
-#[then(expr = "I should see {string}")]
-fn i_should_see(world: &mut BullBoardWorld, state: String) {
-    assert!(
-        world.output.contains(&state),
-        "expected to find {} in {}",
-        state,
-        &world.output
-    );
-}
-
 #[when(expr = "the prices change to the following values on {string}")]
 fn the_prices_change_to_the_following_values_on(
     world: &mut BullBoardWorld,
@@ -64,6 +54,56 @@ fn the_prices_change_to_the_following_values_on(
             )));
         }
     }
+}
+
+#[when(expr = "{string} pays {string} dividend per share on {string}")]
+fn pays_dividend_per_share_on(
+    world: &mut BullBoardWorld,
+    ticker: String,
+    dividend: String,
+    _date: String,
+) {
+    let mut dividend_parts = dividend.split_whitespace();
+    let dividend = dividend_parts.next().unwrap().parse::<f64>().unwrap();
+    let currency = dividend_parts.next().unwrap().to_string();
+    dbg!(&ticker, &dividend, &currency);
+
+    // let paid_at: NaiveDateTime = NaiveDate::parse_from_str(&date, "%d-%m-%Y")
+    //     .expect("parse date")
+    //     .and_hms_opt(0, 0, 0)
+    //     .expect("convert to datetime");
+
+    world.events.push(Event::DividendPaid(DividendPaid::new(
+        dividend, ticker, currency,
+    )));
+}
+  
+#[when("I have the following stock transactions")]
+fn i_have_the_following_stock_transactions(world: &mut BullBoardWorld, step: &Step) {
+    if let Some(table) = step.table() {
+        for row in table.rows.iter().skip(1) {
+            let symbol = &row[0];
+            let currency = &row[1];
+            let amount = &row[2];
+            let price = &row[3];
+            world.events.push(Event::StocksBought(StocksBought::new(
+                amount.parse().unwrap(),
+                price.parse().unwrap(),
+                symbol.to_string(),
+                currency.to_string(),
+            )));
+        }
+    }
+}
+
+#[then(expr = "I should see {string}")]
+fn i_should_see(world: &mut BullBoardWorld, state: String) {
+    assert!(
+        world.output.contains(&state),
+        "expected to find {} in {}",
+        state,
+        &world.output
+    );
 }
 
 // This runs before everything else, so you can setup things here.

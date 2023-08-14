@@ -44,6 +44,7 @@ Feature: Dashboard
       | Ticker  | Currency | Amount  | Price |
       | MSFT    | USD      | 5       | 60    |
     When "MSFT" pays "0.62 USD" dividend per share on "17-11-2021"
+    # So that we test that purchases after ex-divident date don't count
     When I have the following stock transactions
       | Ticker  | Currency | Amount  | Price |
       | MSFT    | USD      | 15      | 60    |
