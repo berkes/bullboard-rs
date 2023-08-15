@@ -1,4 +1,4 @@
-use bullboard::{Dashboard, Event};
+use bullboard::{dashboard::Dashboard, events::Event};
 
 fn main() {
     // Simulating events
@@ -9,12 +9,24 @@ fn main() {
             ticker: "AAPL".to_string(),
             currency: "USD".to_string(),
         },
+        Event::PriceObtained {
+            obtained_at: chrono::NaiveDate::from_ymd_opt(2020, 1, 1).unwrap().and_hms_opt(0, 0, 0).unwrap(),
+            price: 170.0,
+            ticker: "AAPL".to_string(),
+            currency: "USD".to_string(),
+        },
         Event::StocksBought {
             amount: 5.0,
             price: 160.0,
             ticker: "AAPL".to_string(),
             currency: "USD".to_string(),
-        }
+        },
+        Event::PriceObtained {
+            obtained_at: chrono::NaiveDate::from_ymd_opt(2020, 2, 1).unwrap().and_hms_opt(0, 0, 0).unwrap(),
+            price: 160.0,
+            ticker: "AAPL".to_string(),
+            currency: "USD".to_string(),
+        },
     ];
 
     let dashboard = Dashboard::new(events);

@@ -1,4 +1,4 @@
-use bullboard::{Dashboard, Event};
+use bullboard::{dashboard::Dashboard, events::Event};
 use chrono::{NaiveDate, NaiveDateTime};
 use cucumber::{gherkin::Step, given, then, when, World};
 
