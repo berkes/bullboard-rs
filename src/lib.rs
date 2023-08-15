@@ -3,61 +3,23 @@ use std::collections::HashMap; // You'll need to add the chrono crate to your Ca
 
 #[derive(Debug, Clone)]
 pub enum Event {
-    StocksBought(StocksBought),
-    PriceObtained(PriceObtained),
-    DividendPaid(DividendPaid),
-}
-
-#[derive(Debug, Clone)]
-pub struct StocksBought {
-    amount: f64,
-    price: f64,
-    ticker: String,
-    currency: String,
-}
-impl StocksBought {
-    pub fn new(amount: f64, price: f64, ticker: String, currency: String) -> Self {
-        StocksBought {
-            amount,
-            price,
-            ticker,
-            currency,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct PriceObtained {
-    obtained_at: NaiveDateTime,
-    price: f64,
-    ticker: String,
-    currency: String,
-}
-impl PriceObtained {
-    pub fn new(price: f64, ticker: String, obtained_at: NaiveDateTime) -> Self {
-        PriceObtained {
-            price,
-            ticker,
-            obtained_at,
-            currency: "".to_string(),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct DividendPaid {
-    amount: f64,
-    ticker: String,
-    currency: String,
-}
-impl DividendPaid {
-    pub fn new(amount: f64, ticker: String, currency: String) -> Self {
-        DividendPaid {
-            amount,
-            ticker,
-            currency,
-        }
-    }
+    StocksBought {
+        amount: f64,
+        price: f64,
+        ticker: String,
+        currency: String,
+    },
+    PriceObtained {
+        obtained_at: NaiveDateTime,
+        price: f64,
+        ticker: String,
+        currency: String,
+    },
+    DividendPaid {
+        amount: f64,
+        ticker: String,
+        currency: String,
+    },
 }
 
 #[derive(Debug)]
@@ -96,45 +58,64 @@ impl Dashboard {
 
     fn handle_event(&mut self, event: &Event) {
         match event {
-            Event::StocksBought(event) => self.handle_stocks_bought(event),
-            Event::PriceObtained(event) => self.handle_price_obtained(event),
-            Event::DividendPaid(event) => self.handle_dividend_paid(event),
+            Event::StocksBought {
+                ticker,
+                amount,
+                price,
+                currency,
+            } => self.handle_stocks_bought(ticker, amount, price, currency),
+            Event::PriceObtained {
+                ticker,
+                price,
+                obtained_at,
+                currency,
+            } => self.handle_price_obtained(ticker, price, obtained_at, currency),
+            Event::DividendPaid {
+                ticker,
+                amount,
+                currency,
+            } => self.handle_dividend_paid(ticker, amount, currency),
         }
     }
 
-    fn handle_stocks_bought(&mut self, event: &StocksBought) {
+    fn handle_stocks_bought(&mut self, ticker: &String, amount: &f64, price: &f64, currency: &String) {
         if self.currency.is_empty() {
-            self.currency = event.currency.clone();
+            self.currency = currency.clone();
         }
 
-        self.total_buying_price += event.amount * event.price;
+        self.total_buying_price += amount * price;
 
-        if !self.tickers.contains_key(&event.ticker) {
+        if !self.tickers.contains_key(ticker) {
             self.number_of_positions += 1;
         }
-        self.tickers.entry(event.ticker.clone()).or_insert(0.0);
-        *self.tickers.get_mut(&event.ticker).unwrap() += event.amount;
+        self.tickers.entry(ticker.clone()).or_insert(0.0);
+        *self.tickers.get_mut(ticker).unwrap() += amount;
     }
 
-    fn handle_price_obtained(&mut self, event: &PriceObtained) {
+    fn handle_price_obtained(
+        &mut self,
+        ticker: &String,
+        price: &f64,
+        obtained_at: &NaiveDateTime,
+        currency: &String,
+    ) {
         if self.currency.is_empty() {
-            self.currency = event.currency.clone();
+            self.currency = currency.clone();
         }
 
         // Add the value of the stock at the time of the price obtained event
-        let total_stock_value = self.total_value_at.get(&event.obtained_at).unwrap_or(&0.0)
-            + self.tickers.get(&event.ticker).unwrap_or(&0.0) * event.price;
+        let total_stock_value = self.total_value_at.get(obtained_at).unwrap_or(&0.0)
+            + self.tickers.get(ticker).unwrap_or(&0.0) * price;
 
-        self.total_value_at
-            .insert(event.obtained_at, total_stock_value);
+        self.total_value_at.insert(*obtained_at, total_stock_value);
     }
 
-    fn handle_dividend_paid(&mut self, event: &DividendPaid) {
+    fn handle_dividend_paid(&mut self, ticker: &String, amount: &f64, currency: &String) {
         if self.currency.is_empty() {
-            self.currency = event.currency.clone();
+            self.currency = currency.clone();
         }
 
-        self.total_dividend += event.amount * self.tickers.get(&event.ticker).unwrap_or(&0.0);
+        self.total_dividend += amount * self.tickers.get(ticker).unwrap_or(&0.0);
     }
 }
 

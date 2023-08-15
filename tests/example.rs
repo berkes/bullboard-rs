@@ -1,4 +1,4 @@
-use bullboard::{Dashboard, DividendPaid, Event, PriceObtained, StocksBought};
+use bullboard::{Dashboard, Event};
 use chrono::{NaiveDate, NaiveDateTime};
 use cucumber::{gherkin::Step, given, then, when, World};
 
@@ -12,16 +12,16 @@ pub struct BullBoardWorld {
 fn i_have_the_following_stock_stransactions(world: &mut BullBoardWorld, step: &Step) {
     if let Some(table) = step.table() {
         for row in table.rows.iter().skip(1) {
-            let symbol = &row[0];
-            let currency = &row[1];
-            let amount = &row[2];
-            let price = &row[3];
-            world.events.push(Event::StocksBought(StocksBought::new(
-                amount.parse().unwrap(),
-                price.parse().unwrap(),
-                symbol.to_string(),
-                currency.to_string(),
-            )));
+            let ticker: String = row[0].to_string();
+            let currency: String = row[1].parse().unwrap();
+            let amount: f64 = row[2].parse().unwrap();
+            let price: f64 = row[3].parse().unwrap();
+            world.events.push(Event::StocksBought {
+                ticker,
+                amount,
+                price,
+                currency,
+            });
         }
     }
 }
@@ -39,19 +39,22 @@ fn the_prices_change_to_the_following_values_on(
     step: &Step,
 ) {
     if let Some(table) = step.table() {
-        let fetched_at: NaiveDateTime = NaiveDate::parse_from_str(&date, "%d-%m-%Y")
+        let obtained_at: NaiveDateTime = NaiveDate::parse_from_str(&date, "%d-%m-%Y")
             .expect("parse date")
             .and_hms_opt(0, 0, 0)
             .expect("convert to datetime");
 
         for row in table.rows.iter().skip(1) {
-            let symbol = &row[0];
-            let price = &row[1];
-            world.events.push(Event::PriceObtained(PriceObtained::new(
-                price.parse::<f64>().expect("parse price"),
-                symbol.to_string(),
-                fetched_at,
-            )));
+            let ticker: String = row[0].to_string();
+            let price: f64 = row[1].parse().unwrap();
+            let currency: String = "USD".to_string();
+
+            world.events.push(Event::PriceObtained {
+                obtained_at,
+                ticker,
+                price,
+                currency,
+            });
         }
     }
 }
@@ -64,34 +67,36 @@ fn pays_dividend_per_share_on(
     _date: String,
 ) {
     let mut dividend_parts = dividend.split_whitespace();
-    let dividend = dividend_parts.next().unwrap().parse::<f64>().unwrap();
+    let amount = dividend_parts.next().unwrap().parse::<f64>().unwrap();
     let currency = dividend_parts.next().unwrap().to_string();
-    dbg!(&ticker, &dividend, &currency);
 
     // let paid_at: NaiveDateTime = NaiveDate::parse_from_str(&date, "%d-%m-%Y")
     //     .expect("parse date")
     //     .and_hms_opt(0, 0, 0)
     //     .expect("convert to datetime");
 
-    world.events.push(Event::DividendPaid(DividendPaid::new(
-        dividend, ticker, currency,
-    )));
+    world.events.push(Event::DividendPaid {
+        amount,
+        ticker,
+        currency,
+    });
 }
-  
+
 #[when("I have the following stock transactions")]
 fn i_have_the_following_stock_transactions(world: &mut BullBoardWorld, step: &Step) {
     if let Some(table) = step.table() {
         for row in table.rows.iter().skip(1) {
-            let symbol = &row[0];
-            let currency = &row[1];
-            let amount = &row[2];
-            let price = &row[3];
-            world.events.push(Event::StocksBought(StocksBought::new(
-                amount.parse().unwrap(),
-                price.parse().unwrap(),
-                symbol.to_string(),
-                currency.to_string(),
-            )));
+            let ticker: String = row[0].parse().unwrap();
+            let currency: String = row[1].parse().unwrap();
+            let amount: f64 = row[2].parse().unwrap();
+            let price: f64 = row[3].parse().unwrap();
+
+            world.events.push(Event::StocksBought {
+                ticker,
+                amount,
+                price,
+                currency,
+            });
         }
     }
 }

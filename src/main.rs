@@ -1,20 +1,20 @@
-use bullboard::{Dashboard, Event, StocksBought};
+use bullboard::{Dashboard, Event};
 
 fn main() {
     // Simulating events
     let events = vec![
-        Event::StocksBought(StocksBought::new(
-            10.0,
-            150.0,
-            "AAPL".to_string(),
-            "USD".to_string(),
-        )),
-        Event::StocksBought(StocksBought::new(
-            5.0,
-            160.0,
-            "AAPL".to_string(),
-            "USD".to_string(),
-        )),
+        Event::StocksBought {
+            amount: 10.0,
+            price: 150.0,
+            ticker: "AAPL".to_string(),
+            currency: "USD".to_string(),
+        },
+        Event::StocksBought {
+            amount: 5.0,
+            price: 160.0,
+            ticker: "AAPL".to_string(),
+            currency: "USD".to_string(),
+        }
     ];
 
     let dashboard = Dashboard::new(events);
