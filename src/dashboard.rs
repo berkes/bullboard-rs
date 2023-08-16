@@ -105,13 +105,30 @@ impl Dashboard {
 // TODO: Move into a view layer.
 impl std::fmt::Display for Dashboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Total Buying Price: {}\nTotal Value: {}\nAmount of positions: {}\nTotal dividend: {}",
-            self.total_buying_price,
-            self.total_value(self.currency.clone()),
-            self.number_of_positions,
-            self.total_dividend,
-        )
+        let meta = vec![
+            ("Amount of positions", self.number_of_positions.to_string()),
+            ("Total Buying Price", self.total_buying_price.to_string()),
+            (
+                "Total Value",
+                self.total_value(self.currency.clone()).to_string(),
+            ),
+            ("Total dividend", self.total_dividend.to_string()),
+        ];
+        write!(f, "Dashboard\n{}", format_aligned_key_value_pairs(meta))
     }
+}
+
+fn format_aligned_key_value_pairs(key_value_pairs: Vec<(&str, String)>) -> String {
+    let max_key_length = key_value_pairs
+        .iter()
+        .map(|(key, _)| key.len())
+        .max()
+        .unwrap_or(0);
+
+    let formatted_lines: Vec<String> = key_value_pairs
+        .into_iter()
+        .map(|(key, value)| format!("{:<width$} {}", format!("{}:", key), value, width = max_key_length + 1)) // +1 for the colon
+        .collect();
+
+    formatted_lines.join("\n")
 }

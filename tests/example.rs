@@ -90,11 +90,15 @@ fn i_have_the_following_stock_transactions(world: &mut BullBoardWorld, step: &St
 #[then(expr = "I should see {string}")]
 fn i_should_see(world: &mut BullBoardWorld, state: String) {
     assert!(
-        world.output.contains(&state),
+        normalize_whitespace(&world.output).contains(&state),
         "expected to find {} in {}",
         state,
         &world.output
     );
+}
+
+fn normalize_whitespace(s: &str) -> String {
+    s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 // This runs before everything else, so you can setup things here.
