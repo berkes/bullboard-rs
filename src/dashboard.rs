@@ -1,28 +1,30 @@
-use crate::events::Event;
+use crate::events::{DividendPaid, Event, PriceObtained, StocksBought};
+use crate::value_objects::{Amount, Currency, StockIdentifier};
 use chrono::NaiveDateTime;
-use std::collections::HashMap; // You'll need to add the chrono crate to your Cargo.toml
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Dashboard {
     events: Vec<Event>,
-    pub number_of_positions: usize,
-    pub total_dividend: f64,
-    pub total_buying_price: f64,
-    total_value_at: HashMap<NaiveDateTime, f64>,
-    tickers: HashMap<String, f64>,
-    pub currency: String,
+    pub number_of_positions: f64,
+    pub total_dividend: Amount,
+    pub total_buying_price: Amount,
+    total_value_at: HashMap<NaiveDateTime, Amount>,
+    tickers: HashMap<StockIdentifier, f64>,
+    pub currency: Currency,
 }
 
 impl Dashboard {
     pub fn new(events: Vec<Event>) -> Self {
+        let currency = Currency("USD".to_string());
         let mut dashboard = Dashboard {
             events,
-            number_of_positions: 0,
-            total_dividend: 0.0,
-            total_buying_price: 0.0,
+            number_of_positions: 0.0,
+            total_dividend: Amount::zero(currency.clone()),
+            total_buying_price: Amount::zero(currency.clone()),
             total_value_at: HashMap::new(),
             tickers: HashMap::new(),
-            currency: "".to_string(),
+            currency,
         };
 
         for event in &dashboard.events.clone() {
@@ -32,70 +34,71 @@ impl Dashboard {
         dashboard
     }
 
-    pub fn total_value(&self) -> f64 {
-        *self.total_value_at.values().last().unwrap_or(&0.0)
+    pub fn total_value(&self, currency: Currency) -> Amount {
+        self.total_value_at
+            .values()
+            .last()
+            .unwrap_or(&Amount::zero(currency))
+            .to_owned()
     }
 
-    fn handle_event(&mut self, event: &Event) {
-        match event {
-            Event::StocksBought {
-                ticker,
-                amount,
-                price,
-                currency,
-            } => self.handle_stocks_bought(ticker, amount, price, currency),
-            Event::PriceObtained {
-                ticker,
-                price,
-                obtained_at,
-                currency,
-            } => self.handle_price_obtained(ticker, price, obtained_at, currency),
-            Event::DividendPaid {
-                ticker,
-                amount,
-                currency,
-            } => self.handle_dividend_paid(ticker, amount, currency),
-        }
+    pub fn total_value_at(&self, date: &NaiveDateTime, currency: Currency) -> Amount {
+        self.total_value_at
+            .get(date)
+            .unwrap_or(&Amount::zero(currency))
+            .to_owned()
     }
 
-    fn handle_stocks_bought(&mut self, ticker: &String, amount: &f64, price: &f64, currency: &String) {
+    pub fn amount_of(&self, identifier: &StockIdentifier) -> f64 {
+        *self.tickers.get(identifier).unwrap_or(&0.0)
+    }
+
+    fn handle_event(&mut self, generic_event: &Event) {
+        match generic_event {
+            Event::StocksBought(event) => self.handle_stocks_bought(event.clone()),
+            Event::PriceObtained(event) => self.handle_price_obtained(event.clone()),
+            Event::DividendPaid(event) => self.handle_dividend_paid(event.clone()),
+        };
+    }
+
+    fn handle_stocks_bought(&mut self, event: StocksBought) {
         if self.currency.is_empty() {
-            self.currency = currency.clone();
+            self.currency = event.currency().clone();
         }
 
-        self.total_buying_price += amount * price;
+        self.total_buying_price += event.price * event.amount;
 
-        if !self.tickers.contains_key(ticker) {
-            self.number_of_positions += 1;
-        }
-        self.tickers.entry(ticker.clone()).or_insert(0.0);
-        *self.tickers.get_mut(ticker).unwrap() += amount;
+        self.upsert_tickers(event.identifier.clone(), event.amount);
     }
 
-    fn handle_price_obtained(
-        &mut self,
-        ticker: &String,
-        price: &f64,
-        obtained_at: &NaiveDateTime,
-        currency: &String,
-    ) {
+    fn handle_price_obtained(&mut self, event: PriceObtained) {
         if self.currency.is_empty() {
-            self.currency = currency.clone();
+            self.currency = event.currency().clone();
         }
 
         // Add the value of the stock at the time of the price obtained event
-        let total_stock_value = self.total_value_at.get(obtained_at).unwrap_or(&0.0)
-            + self.tickers.get(ticker).unwrap_or(&0.0) * price;
+        let total_stock_value = (event.price.clone() * self.amount_of(&event.identifier))
+            + self.total_value_at(&event.obtained_at, event.currency().clone());
 
-        self.total_value_at.insert(*obtained_at, total_stock_value);
+        self.total_value_at
+            .insert(event.obtained_at, total_stock_value);
     }
 
-    fn handle_dividend_paid(&mut self, ticker: &String, amount: &f64, currency: &String) {
+    fn handle_dividend_paid(&mut self, event: DividendPaid) {
         if self.currency.is_empty() {
-            self.currency = currency.clone();
+            self.currency = event.currency().clone();
         }
 
-        self.total_dividend += amount * self.tickers.get(ticker).unwrap_or(&0.0);
+        self.total_dividend += event.price * self.amount_of(&event.identifier);
+    }
+
+    fn upsert_tickers(&mut self, identifier: StockIdentifier, amount: f64) {
+        if self.tickers.get(&identifier).is_none() {
+            self.number_of_positions += 1.0;
+        }
+
+        let current_amount = self.tickers.get(&identifier).unwrap_or(&0.0);
+        self.tickers.insert(identifier, current_amount + amount);
     }
 }
 
@@ -104,14 +107,11 @@ impl std::fmt::Display for Dashboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Total Buying Price: {} {}\nTotal Value: {} {}\nAmount of positions: {}\nTotal dividend: {} {}",
-            format!("{:.2}", self.total_buying_price),
-            self.currency,
-            format!("{:.2}", self.total_value()),
-            self.currency,
+            "Total Buying Price: {}\nTotal Value: {}\nAmount of positions: {}\nTotal dividend: {}",
+            self.total_buying_price,
+            self.total_value(self.currency.clone()),
             self.number_of_positions,
-            format!("{:.2}", self.total_dividend),
-            self.currency
+            self.total_dividend,
         )
     }
 }

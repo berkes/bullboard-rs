@@ -16,12 +16,10 @@ fn i_have_the_following_stock_stransactions(world: &mut BullBoardWorld, step: &S
             let currency: String = row[1].parse().unwrap();
             let amount: f64 = row[2].parse().unwrap();
             let price: f64 = row[3].parse().unwrap();
-            world.events.push(Event::StocksBought {
-                ticker,
-                amount,
-                price,
-                currency,
-            });
+            let money = format!("{} {}", price, currency);
+            world
+                .events
+                .push(Event::new_stocks_bought(amount, money, ticker))
         }
     }
 }
@@ -48,13 +46,11 @@ fn the_prices_change_to_the_following_values_on(
             let ticker: String = row[0].to_string();
             let price: f64 = row[1].parse().unwrap();
             let currency: String = "USD".to_string();
+            let money = format!("{} {}", price, currency);
 
-            world.events.push(Event::PriceObtained {
-                obtained_at,
-                ticker,
-                price,
-                currency,
-            });
+            world
+                .events
+                .push(Event::new_price_obtained(obtained_at, money, ticker));
         }
     }
 }
@@ -69,17 +65,9 @@ fn pays_dividend_per_share_on(
     let mut dividend_parts = dividend.split_whitespace();
     let amount = dividend_parts.next().unwrap().parse::<f64>().unwrap();
     let currency = dividend_parts.next().unwrap().to_string();
+    let money = format!("{} {}", amount, currency);
 
-    // let paid_at: NaiveDateTime = NaiveDate::parse_from_str(&date, "%d-%m-%Y")
-    //     .expect("parse date")
-    //     .and_hms_opt(0, 0, 0)
-    //     .expect("convert to datetime");
-
-    world.events.push(Event::DividendPaid {
-        amount,
-        ticker,
-        currency,
-    });
+    world.events.push(Event::new_dividend_paid(money, ticker));
 }
 
 #[when("I have the following stock transactions")]
@@ -90,13 +78,11 @@ fn i_have_the_following_stock_transactions(world: &mut BullBoardWorld, step: &St
             let currency: String = row[1].parse().unwrap();
             let amount: f64 = row[2].parse().unwrap();
             let price: f64 = row[3].parse().unwrap();
+            let money = format!("{} {}", price, currency);
 
-            world.events.push(Event::StocksBought {
-                ticker,
-                amount,
-                price,
-                currency,
-            });
+            world
+                .events
+                .push(Event::new_stocks_bought(amount, money, ticker));
         }
     }
 }
