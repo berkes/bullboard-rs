@@ -72,9 +72,6 @@ impl DividendPaid {
     }
 }
 
-// Your existing code above...
-
-// Now, the refactored enum Event:
 #[derive(Debug, Clone)]
 pub enum Event {
     StocksBought(StocksBought),
