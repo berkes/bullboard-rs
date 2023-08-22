@@ -45,5 +45,14 @@ Feature: Dashboard
       | Ticker  | Currency | Amount  | Price |
       | MSFT    | USD      | 15      | 60    |
     When I check my dashboard
-    Then I should see "Total dividend: 3.10 USD"
+    Then I should see the following text
+      """
+      Dashboard
+      Amount of positions: 1
+      Total Buying Price:  1200.00 USD
+      Total Value:         0.00 USD
+      Total dividend:      3.10 USD
 
+        Ticker    Amount      Value 
+        MSFT          20    ??.?? ??? 
+      """
