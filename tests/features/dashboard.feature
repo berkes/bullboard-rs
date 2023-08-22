@@ -4,40 +4,36 @@ Feature: Dashboard
   As a user
   I want to see important numbers
 
-  Scenario: Total Buy Price
-    Given I have the following stock transactions
-      | Ticker  | Currency | Amount | Price |
-      | AAPL    | USD      | 1      | 60    |
-      | AAPL    | USD      | 1      | 80    |
-      | ESTC    | USD      | 3      | 20    |
-    When I check my dashboard
-    Then I should see "Total Buying Price: 200.00 USD"
-
-  Scenario: Total Value over Time
-    Given I have the following stock transactions
-      | Ticker  | Currency | Amount | Price |
-      | AAPL    | USD      | 1      | 60    |
-      | ESTC    | USD      | 3      | 20    |
-    When the prices change to the following values on "17-11-2021"
-      | Ticker  | Price |
-      | AAPL    | 71    |
-      | ESTC    | 22    |
-    When the prices change to the following values on "24-11-2021"
-      | Ticker  | Price |
-      | AAPL    | 80    |
-      | ESTC    | 19    |
-    When I check my dashboard
-    Then I should see "Total Value: 137.00 USD"
-
-  Scenario: Total Positions
+  Scenario: Portfolio Table
     Given I have the following stock transactions
       | Ticker  | Currency | Amount  | Price |
       | AAPL    | USD      | 1       | 60    |
       | AAPL    | USD      | 1       | 90    |
       | TSLA    | USD      | 1       | 80    |
       | ESTC    | USD      | 3       | 20    |
+    # TODO: should price-obtained be emitted on stocks bought? Or shold we explicitly obtain the price?
+    When the prices change to the following values on "17-11-2021"
+      | Ticker  | Price |
+      | AAPL    | 71    |
+      | ESTC    | 22    |
     When I check my dashboard
-    Then I should see "Amount of positions: 3"
+    Then I should see the following text
+      # NOTE: This is a string literal, not a Gherkin table
+      # NOTE: The rows are sorted by value
+      """
+      Dashboard
+      Amount of positions: 3
+      Total Buying Price:  290.00 USD
+      Total Value:         208.00 USD
+      Total dividend:      0.00 USD
+
+        Ticker    Amount      Value 
+        AAPL           2    142.00 USD 
+        ESTC           3     66.00 USD 
+        TSLA           1     ??.?? ??? 
+      """
+      # TODO: add columns: name, unrealized P/L, realized P/L, dividend, Total P/L
+      # TODO: add percentages of gains/losses for each position sinice last price check
 
   Scenario: Dividend
     Given I have the following stock transactions

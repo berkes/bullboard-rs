@@ -1,6 +1,7 @@
 use crate::events::{DividendPaid, Event, PriceObtained, StocksBought};
-use crate::value_objects::{Amount, Currency, StockIdentifier};
+use crate::value_objects::{Amount, Asset, Currency, StockIdentifier};
 use chrono::NaiveDateTime;
+use prettytable::{format::FormatBuilder, row, Table};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -10,7 +11,7 @@ pub struct Dashboard {
     pub total_dividend: Amount,
     pub total_buying_price: Amount,
     total_value_at: HashMap<NaiveDateTime, Amount>,
-    tickers: HashMap<StockIdentifier, f64>,
+    assets: HashMap<StockIdentifier, Asset>,
     pub currency: Currency,
 }
 
@@ -23,7 +24,7 @@ impl Dashboard {
             total_dividend: Amount::zero(currency.clone()),
             total_buying_price: Amount::zero(currency.clone()),
             total_value_at: HashMap::new(),
-            tickers: HashMap::new(),
+            assets: HashMap::new(),
             currency,
         };
 
@@ -50,7 +51,14 @@ impl Dashboard {
     }
 
     pub fn amount_of(&self, identifier: &StockIdentifier) -> f64 {
-        *self.tickers.get(identifier).unwrap_or(&0.0)
+        self.assets
+            .get(identifier)
+            .unwrap_or(&Asset::zero(identifier))
+            .amount
+    }
+
+    pub fn assets(&self) -> Vec<Asset> {
+        self.assets.values().cloned().collect()
     }
 
     fn handle_event(&mut self, generic_event: &Event) {
@@ -66,14 +74,24 @@ impl Dashboard {
             self.currency = event.currency().clone();
         }
 
+        let asset = Asset {
+            identifier: event.identifier.clone(),
+            amount: event.amount,
+            value: None,
+        };
+
         self.total_buying_price += event.price * event.amount;
 
-        self.upsert_tickers(event.identifier.clone(), event.amount);
+        self.upsert_assets(asset, event.amount);
     }
 
     fn handle_price_obtained(&mut self, event: PriceObtained) {
         if self.currency.is_empty() {
             self.currency = event.currency().clone();
+        }
+
+        if let Some(asset) = self.assets.get_mut(&event.identifier) {
+            asset.value = Some(event.price.clone() * asset.amount)
         }
 
         // Add the value of the stock at the time of the price obtained event
@@ -92,13 +110,22 @@ impl Dashboard {
         self.total_dividend += event.price * self.amount_of(&event.identifier);
     }
 
-    fn upsert_tickers(&mut self, identifier: StockIdentifier, amount: f64) {
-        if self.tickers.get(&identifier).is_none() {
+    fn upsert_assets(&mut self, asset: Asset, amount: f64) {
+        let identifier = asset.identifier.clone();
+        if self.assets.get(&identifier).is_none() {
             self.number_of_positions += 1.0;
         }
 
-        let current_amount = self.tickers.get(&identifier).unwrap_or(&0.0);
-        self.tickers.insert(identifier, current_amount + amount);
+        let new_asset = if let Some(current_asset) = self.assets.get(&identifier) {
+            Asset {
+                identifier: identifier.clone(),
+                amount: current_asset.amount + amount,
+                value: asset.value,
+            }
+        } else {
+            asset
+        };
+        self.assets.insert(identifier, new_asset);
     }
 }
 
@@ -114,7 +141,17 @@ impl std::fmt::Display for Dashboard {
             ),
             ("Total dividend", self.total_dividend.to_string()),
         ];
-        write!(f, "Dashboard\n{}", format_aligned_key_value_pairs(meta))
+
+        let mut assets: Vec<Asset> = self.assets();
+        assets.sort_by(|a, b| a.value.cmp(&b.value));
+        assets.reverse();
+
+        write!(
+            f,
+            "\nDashboard\n{}\n\n{}",
+            format_aligned_key_value_pairs(meta),
+            format_portfolio_table(assets)
+        )
     }
 }
 
@@ -127,8 +164,55 @@ fn format_aligned_key_value_pairs(key_value_pairs: Vec<(&str, String)>) -> Strin
 
     let formatted_lines: Vec<String> = key_value_pairs
         .into_iter()
-        .map(|(key, value)| format!("{:<width$} {}", format!("{}:", key), value, width = max_key_length + 1)) // +1 for the colon
+        .map(|(key, value)| {
+            format!(
+                "{:<width$} {}",
+                format!("{}:", key),
+                value,
+                width = max_key_length + 1
+            )
+        }) // +1 for the colon
         .collect();
 
     formatted_lines.join("\n")
+}
+
+fn format_portfolio_table(assets: Vec<Asset>) -> String {
+    let mut table = Table::new();
+    let clean_more_padding = FormatBuilder::new()
+        .column_separator(' ')
+        .padding(2, 1)
+        .build();
+
+    table.set_format(clean_more_padding);
+    table.set_titles(row![c->"Ticker", c->"Amount", c->"Value"]);
+
+    for asset in assets {
+        table.add_row(row![
+            d->asset.identifier,
+            r->asset.amount,
+            r->asset
+                .value
+                .map(|v| v.to_string())
+                .unwrap_or("??.?? ???".to_string())
+        ]);
+    }
+
+    table.to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_that_stocks_bought_adds_asset() {
+        let mut dashboard = Dashboard::new(vec![]);
+        let event = Event::new_stocks_bought(10.0, "13.37 USD".to_string(), "AAPL".to_string());
+        if let Event::StocksBought(event) = event {
+            dashboard.handle_stocks_bought(event);
+        }
+
+        assert_eq!(dashboard.assets.len(), 1);
+    }
 }

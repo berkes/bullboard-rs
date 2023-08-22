@@ -5,8 +5,33 @@ use std::{
 
 use rust_decimal::{prelude::Zero, Decimal};
 
+/// A financial asset (stock, ETF, etc.) held by the user
+#[derive(Debug, Clone, PartialEq)]
+pub struct Asset {
+    /// The identifier of the asset
+    pub identifier: StockIdentifier,
+
+    /// The amount of the asset held
+    pub amount: f64,
+
+    /// The total value of the asset based on last price obtained
+    /// TODO: This should be a hashmap of dates and amounts but that's a large refactor.
+    /// None means that the price has not been obtained yet.
+    pub value: Option<Amount>,
+}
+
+impl Asset {
+    pub fn zero(identifier: &StockIdentifier) -> Self {
+        Self {
+            identifier: identifier.clone(),
+            amount: 0.0,
+            value: None,
+        }
+    }
+}
+
 /// A number of units of certain commodity
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Ord, PartialOrd, Eq)]
 pub struct Amount {
     /// The value of the amount
     pub num: Decimal,
@@ -107,7 +132,7 @@ impl AddAssign for Amount {
 }
 
 /// A currency string
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
 pub struct Currency(pub String);
 impl Currency {
     pub(crate) fn is_empty(&self) -> bool {
@@ -131,6 +156,11 @@ impl From<String> for StockIdentifier {
         Self { ticker: s }
     }
 }
+impl Display for StockIdentifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.ticker)
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -146,7 +176,10 @@ mod tests {
 
     #[test]
     fn test_amount_display_no_currency() {
-        let amount = Amount { currency: Currency("".to_string()), ..Default::default() };
+        let amount = Amount {
+            currency: Currency("".to_string()),
+            ..Default::default()
+        };
         assert_eq!(amount.to_string(), "0.00");
     }
 
@@ -201,5 +234,11 @@ mod tests {
     fn test_amount_add_assign_different_currencies() {
         let mut amount = Amount::from("123.45 EUR".to_string());
         amount += Amount::from("123.45 USD".to_string());
+    }
+
+    #[test]
+    fn test_stock_identifier_display() {
+        let stock = StockIdentifier::from("AAPL".to_string());
+        assert_eq!(stock.to_string(), "AAPL");
     }
 }

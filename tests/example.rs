@@ -1,6 +1,7 @@
 use bullboard::{dashboard::Dashboard, events::Event};
 use chrono::{NaiveDate, NaiveDateTime};
 use cucumber::{gherkin::Step, given, then, when, World};
+use pretty_assertions::assert_eq;
 
 #[derive(Debug, Default, World)]
 pub struct BullBoardWorld {
@@ -95,6 +96,13 @@ fn i_should_see(world: &mut BullBoardWorld, state: String) {
         state,
         &world.output
     );
+}
+
+#[then(expr = "I should see the following text")]
+fn i_should_see_following(world: &mut BullBoardWorld, step: &Step) {
+    if let Some(content) = step.docstring() {
+        assert_eq!(&world.output, content);
+    }
 }
 
 fn normalize_whitespace(s: &str) -> String {
