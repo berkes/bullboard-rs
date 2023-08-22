@@ -32,7 +32,7 @@ Feature: Dashboard
         ESTC           3    0.00 USD     66.00 USD 
         TSLA           1    0.00 USD     ??.?? ??? 
       """
-      # TODO: add columns: name, unrealized P/L, realized P/L, dividend, Total P/L
+      # TODO: add columns: name, unrealized P/L, realized P/L, Total P/L
       # TODO: add percentages of gains/losses for each position sinice last price check
 
   Scenario: Dividend
