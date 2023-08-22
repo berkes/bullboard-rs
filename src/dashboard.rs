@@ -12,7 +12,6 @@ pub struct Dashboard {
     pub total_buying_price: Amount,
     total_value_at: HashMap<NaiveDateTime, Amount>,
     assets: HashMap<StockIdentifier, Asset>,
-    pub currency: Currency,
 }
 
 impl Dashboard {
@@ -25,7 +24,6 @@ impl Dashboard {
             total_buying_price: Amount::zero(currency.clone()),
             total_value_at: HashMap::new(),
             assets: HashMap::new(),
-            currency,
         };
 
         for event in &dashboard.events.clone() {
@@ -70,10 +68,6 @@ impl Dashboard {
     }
 
     fn handle_stocks_bought(&mut self, event: StocksBought) {
-        if self.currency.is_empty() {
-            self.currency = event.currency().clone();
-        }
-
         let asset = Asset {
             identifier: event.identifier.clone(),
             amount: event.amount,
@@ -87,10 +81,6 @@ impl Dashboard {
     }
 
     fn handle_price_obtained(&mut self, event: PriceObtained) {
-        if self.currency.is_empty() {
-            self.currency = event.currency().clone();
-        }
-
         if let Some(asset) = self.assets.get_mut(&event.identifier) {
             asset.value = Some(event.price.clone() * asset.amount)
         }
@@ -104,10 +94,6 @@ impl Dashboard {
     }
 
     fn handle_dividend_paid(&mut self, event: DividendPaid) {
-        if self.currency.is_empty() {
-            self.currency = event.currency().clone();
-        }
-
         if let Some(asset) = self.assets.get_mut(&event.identifier) {
             asset.dividends += event.price.clone() * asset.amount;
         }
@@ -141,10 +127,7 @@ impl std::fmt::Display for Dashboard {
         let meta = vec![
             ("Amount of positions", self.number_of_positions.to_string()),
             ("Total Buying Price", self.total_buying_price.to_string()),
-            (
-                "Total Value",
-                self.total_value(self.currency.clone()).to_string(),
-            ),
+            ("Total Value", self.total_value("USD".into()).to_string()),
             ("Total dividend", self.total_dividend.to_string()),
         ];
 

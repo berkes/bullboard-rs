@@ -163,6 +163,11 @@ impl From<String> for Currency {
         Self(s)
     }
 }
+impl From<&str> for Currency {
+    fn from(s: &str) -> Self {
+        Self(s.to_string())
+    }
+}
 
 /// A Stock Identifier
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]

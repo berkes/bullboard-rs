@@ -70,10 +70,6 @@ impl DividendPaid {
         let identifier = StockIdentifier::from(identifier);
         Self { price, identifier }
     }
-
-    pub(crate) fn currency(&self) -> Currency {
-        self.price.currency.clone()
-    }
 }
 
 // Your existing code above...
