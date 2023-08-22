@@ -77,6 +77,7 @@ impl Dashboard {
         let asset = Asset {
             identifier: event.identifier.clone(),
             amount: event.amount,
+            dividends: Amount::zero(event.currency().clone()),
             value: None,
         };
 
@@ -107,6 +108,10 @@ impl Dashboard {
             self.currency = event.currency().clone();
         }
 
+        if let Some(asset) = self.assets.get_mut(&event.identifier) {
+            asset.dividends += event.price.clone() * asset.amount;
+        }
+
         self.total_dividend += event.price * self.amount_of(&event.identifier);
     }
 
@@ -120,6 +125,7 @@ impl Dashboard {
             Asset {
                 identifier: identifier.clone(),
                 amount: current_asset.amount + amount,
+                dividends: current_asset.dividends.clone(),
                 value: asset.value,
             }
         } else {
@@ -185,12 +191,13 @@ fn format_portfolio_table(assets: Vec<Asset>) -> String {
         .build();
 
     table.set_format(clean_more_padding);
-    table.set_titles(row![c->"Ticker", c->"Amount", c->"Value"]);
+    table.set_titles(row![c->"Ticker", c->"Amount", c->"Dividend", c->"Value"]);
 
     for asset in assets {
         table.add_row(row![
             d->asset.identifier,
             r->asset.amount,
+            r->asset.dividends,
             r->asset
                 .value
                 .map(|v| v.to_string())
@@ -214,5 +221,44 @@ mod tests {
         }
 
         assert_eq!(dashboard.assets.len(), 1);
+    }
+
+    #[test]
+    fn test_that_stocks_bought_sets_dividend_to_zero() {
+        let mut dashboard = Dashboard::new(vec![]);
+        let event = Event::new_stocks_bought(10.0, "13.37 USD".to_string(), "AAPL".to_string());
+        if let Event::StocksBought(event) = event {
+            dashboard.handle_stocks_bought(event);
+        }
+
+        let id: StockIdentifier = "AAPL".into();
+        assert_eq!(
+            dashboard.assets.get(&id).unwrap().dividends,
+            Amount::new(0.into(), "USD".to_string())
+        );
+    }
+
+    #[test]
+    fn test_that_dividend_paid_adds_dividend_to_asset() {
+        let mut dashboard = Dashboard::new(vec![]);
+        let events = vec![
+            // first we need to buy some stocks before getting dividend on them
+            Event::new_stocks_bought(10.0, "13.37 USD".to_string(), "AAPL".to_string()),
+            Event::new_dividend_paid("13.37 USD".to_string(), "AAPL".to_string()),
+        ];
+
+        for event in events {
+            match event {
+                Event::StocksBought(event) => dashboard.handle_stocks_bought(event),
+                Event::DividendPaid(event) => dashboard.handle_dividend_paid(event),
+                _ => panic!("Unexpected event"),
+            }
+        }
+
+        let id: StockIdentifier = "AAPL".into();
+        assert_eq!(
+            dashboard.assets.get(&id).unwrap().dividends,
+            "133.70 USD".to_string().into()
+        );
     }
 }

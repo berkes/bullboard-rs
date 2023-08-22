@@ -27,10 +27,10 @@ Feature: Dashboard
       Total Value:         208.00 USD
       Total dividend:      0.00 USD
 
-        Ticker    Amount      Value 
-        AAPL           2    142.00 USD 
-        ESTC           3     66.00 USD 
-        TSLA           1     ??.?? ??? 
+        Ticker    Amount    Dividend      Value 
+        AAPL           2    0.00 USD    142.00 USD 
+        ESTC           3    0.00 USD     66.00 USD 
+        TSLA           1    0.00 USD     ??.?? ??? 
       """
       # TODO: add columns: name, unrealized P/L, realized P/L, dividend, Total P/L
       # TODO: add percentages of gains/losses for each position sinice last price check
@@ -53,6 +53,6 @@ Feature: Dashboard
       Total Value:         0.00 USD
       Total dividend:      3.10 USD
 
-        Ticker    Amount      Value 
-        MSFT          20    ??.?? ??? 
+        Ticker    Amount    Dividend      Value 
+        MSFT          20    3.10 USD    ??.?? ??? 
       """

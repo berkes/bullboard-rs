@@ -14,6 +14,9 @@ pub struct Asset {
     /// The amount of the asset held
     pub amount: f64,
 
+    /// Total amount of dividends paid for the asset
+    pub dividends: Amount,
+
     /// The total value of the asset based on last price obtained
     /// TODO: This should be a hashmap of dates and amounts but that's a large refactor.
     /// None means that the price has not been obtained yet.
@@ -25,6 +28,7 @@ impl Asset {
         Self {
             identifier: identifier.clone(),
             amount: 0.0,
+            dividends: Amount::zero(Currency::default()),
             value: None,
         }
     }
@@ -41,6 +45,16 @@ pub struct Amount {
 }
 
 impl Amount {
+    pub fn new<T>(num: Decimal, currency: T) -> Self
+    where
+        T: Into<Currency>,
+    {
+        Self {
+            num,
+            currency: currency.into(),
+        }
+    }
+
     pub fn zero(currency: Currency) -> Self {
         Self {
             num: Decimal::zero(),
@@ -144,6 +158,11 @@ impl Display for Currency {
         f.write_str(&self.0)
     }
 }
+impl From<String> for Currency {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
 
 /// A Stock Identifier
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
@@ -154,6 +173,13 @@ pub struct StockIdentifier {
 impl From<String> for StockIdentifier {
     fn from(s: String) -> Self {
         Self { ticker: s }
+    }
+}
+impl From<&str> for StockIdentifier {
+    fn from(s: &str) -> Self {
+        Self {
+            ticker: s.to_string(),
+        }
     }
 }
 impl Display for StockIdentifier {
