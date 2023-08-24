@@ -21,9 +21,18 @@ fn main() {
             "160.0 USD".to_string(),
             "AAPL".to_string(),
         ),
+        Event::new_stocks_bought(4.0, "13.37 EUR".to_string(), "ASR.AS".to_string()),
+        Event::new_price_obtained(
+            chrono::NaiveDate::from_ymd_opt(2020, 2, 1)
+                .unwrap()
+                .and_hms_opt(0, 0, 0)
+                .unwrap(),
+            "14.20 EUR".to_string(),
+            "ASR.AS".to_string(),
+        ),
         Event::new_stocks_bought(8.0, "100.0 USD".to_string(), "MSFT".to_string()),
         Event::new_price_obtained(
-            chrono::NaiveDate::from_ymd_opt(2020, 1, 1)
+            chrono::NaiveDate::from_ymd_opt(2020, 2, 1)
                 .unwrap()
                 .and_hms_opt(0, 0, 0)
                 .unwrap(),

@@ -13,19 +13,20 @@ Feature: Dashboard
       | ESTC    | USD      | 3       | 20    |
     # TODO: should price-obtained be emitted on stocks bought? Or shold we explicitly obtain the price?
     When the prices change to the following values on "17-11-2021"
-      | Ticker  | Price |
-      | AAPL    | 71    |
-      | ESTC    | 22    |
+      | Ticker | Currency | Price |
+      | AAPL   | USD      | 71    |
+      | ESTC   | USD      | 22    |
     When I check my dashboard
     Then I should see the following text
       # NOTE: This is a string literal, not a Gherkin table
       # NOTE: The rows are sorted by value
       """
       Dashboard
-      Amount of positions: 3
-      Total Buying Price:  290.00 USD
-      Total Value:         208.00 USD
-      Total dividend:      0.00 USD
+
+        Number of positions             3 
+        Total buying price     290.00 USD 
+        Total value            208.00 USD 
+        Total dividend           0.00 USD 
 
         Ticker    Amount    Dividend      Value 
         AAPL           2    0.00 USD    142.00 USD 
@@ -48,11 +49,38 @@ Feature: Dashboard
     Then I should see the following text
       """
       Dashboard
-      Amount of positions: 1
-      Total Buying Price:  1200.00 USD
-      Total Value:         0.00 USD
-      Total dividend:      3.10 USD
+
+        Number of positions              1 
+        Total buying price     1200.00 USD 
+        Total value               0.00 USD 
+        Total dividend            3.10 USD 
 
         Ticker    Amount    Dividend      Value 
         MSFT          20    3.10 USD    ??.?? ??? 
+      """
+
+  Scenario: Different currencies
+    Given I have the following stock transactions
+      | Ticker  | Currency | Amount  | Price |
+      | MSFT    | USD      | 5       | 60    |
+      | ASR-AS  | EUR      | 2       | 50    |
+    When the prices change to the following values on "17-11-2021"
+      | Ticker | Currency | Price |
+      | MSFT   | USD      | 70    |
+      | ASR-AS | EUR      | 60    |
+    When I check my dashboard
+    Then I should see the following text
+      """
+      Dashboard
+
+        Number of positions             2 
+        Total buying price     100.00 EUR 
+                               300.00 USD 
+        Total value            120.00 EUR 
+                               350.00 USD 
+        Total dividend           0.00 USD 
+
+        Ticker    Amount    Dividend      Value 
+        MSFT           5    0.00 USD    350.00 USD 
+        ASR-AS         2    0.00 EUR    120.00 EUR 
       """

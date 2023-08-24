@@ -1,9 +1,9 @@
+use rust_decimal::{prelude::Zero, Decimal};
 use std::{
+    collections::HashMap,
     fmt::Display,
     ops::{Add, AddAssign, Mul},
 };
-
-use rust_decimal::{prelude::Zero, Decimal};
 
 /// A financial asset (stock, ETF, etc.) held by the user
 #[derive(Debug, Clone, PartialEq)]
@@ -18,7 +18,6 @@ pub struct Asset {
     pub dividends: Amount,
 
     /// The total value of the asset based on last price obtained
-    /// TODO: This should be a hashmap of dates and amounts but that's a large refactor.
     /// None means that the price has not been obtained yet.
     pub value: Option<Amount>,
 }
@@ -31,6 +30,56 @@ impl Asset {
             dividends: Amount::zero(Currency::default()),
             value: None,
         }
+    }
+}
+
+#[derive(Default, Debug, Clone, PartialEq)]
+pub struct Amounts {
+    pub amounts: HashMap<Currency, Amount>,
+}
+
+impl Amounts {
+    pub fn new(amounts: Vec<Amount>) -> Self {
+        let mut amounts_map = HashMap::new();
+        for amount in amounts {
+            amounts_map.insert(amount.currency.clone(), amount);
+        }
+
+        Self {
+            amounts: amounts_map,
+        }
+    }
+
+    pub fn zero() -> Self {
+        let default_currency = Currency::default();
+        Self {
+            amounts: HashMap::from([(default_currency.clone(), Amount::zero(default_currency))]),
+        }
+    }
+
+    pub(crate) fn for_currency(&self, currency: &Currency) -> Amount {
+        self.amounts
+            .get(currency)
+            .unwrap_or(&Amount::zero(currency.clone()))
+            .to_owned()
+    }
+
+    pub(crate) fn upsert(&mut self, amount: Amount) {
+        if let Some(existing_amount) = self.amounts.get_mut(&amount.currency) {
+            existing_amount.num += amount.num;
+        } else {
+            self.amounts.insert(amount.currency.clone(), amount);
+        }
+    }
+
+    /// Sort by Currency descending
+    /// TODO: make configurable by allowing to pass in a sorting function
+    pub fn sorted(&self) -> Vec<Amount> {
+        let mut amounts = self.amounts.values().cloned().collect::<Vec<Amount>>();
+        amounts.sort_by(|a, b| b.currency.cmp(&a.currency));
+        amounts.reverse();
+
+        amounts
     }
 }
 
@@ -146,11 +195,18 @@ impl AddAssign for Amount {
 }
 
 /// A currency string
-#[derive(Default, Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
+#[derive(Hash, Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
 pub struct Currency(pub String);
 impl Currency {
+    const DEFAULT: &'static str = "USD";
+
     pub(crate) fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+}
+impl Default for Currency {
+    fn default() -> Self {
+        Self(Self::DEFAULT.to_string())
     }
 }
 impl Display for Currency {
@@ -271,5 +327,44 @@ mod tests {
     fn test_stock_identifier_display() {
         let stock = StockIdentifier::from("AAPL".to_string());
         assert_eq!(stock.to_string(), "AAPL");
+    }
+
+    #[test]
+    fn test_amounts_upsert_with_new_currency() {
+        let mut amounts = Amounts::default();
+        amounts.upsert(Amount::from("123.45 EUR".to_string()));
+        assert_eq!(amounts.amounts.len(), 1);
+    }
+
+    #[test]
+    fn test_amounts_zero_has_default_currency() {
+        let amounts = Amounts::zero();
+        let default_curr = Currency::default();
+        assert_eq!(
+            *amounts.amounts.get(&default_curr).unwrap(),
+            Amount::zero(default_curr)
+        );
+    }
+
+    #[test]
+    fn test_amounts_sorted_by_currency() {
+        let amounts = Amounts::new(vec![
+            Amount::from("123.45 USD".to_string()),
+            Amount::from("123.45 EUR".to_string()),
+        ]);
+
+        assert_eq!(
+            amounts.sorted(),
+            vec![
+                Amount::from("123.45 EUR".to_string()),
+                Amount::from("123.45 USD".to_string()),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_currency_has_default() {
+        let currency = Currency::default();
+        assert_eq!(currency.0, Currency::DEFAULT);
     }
 }

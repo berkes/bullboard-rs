@@ -45,8 +45,8 @@ fn the_prices_change_to_the_following_values_on(
 
         for row in table.rows.iter().skip(1) {
             let ticker: String = row[0].to_string();
-            let price: f64 = row[1].parse().unwrap();
-            let currency: String = "USD".to_string();
+            let currency: String = row[1].to_string();
+            let price: f64 = row[2].parse().unwrap();
             let money = format!("{} {}", price, currency);
 
             world
