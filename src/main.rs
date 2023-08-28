@@ -1,6 +1,10 @@
 use bullboard::{dashboard::Dashboard, events::Event};
 
+mod cli;
+
 fn main() {
+    let _matches = cli::build_cli().get_matches();
+
     // Simulating events
     let events = vec![
         Event::new_stocks_bought(10.0, "150.0 USD".to_string(), "AAPL".to_string()),
