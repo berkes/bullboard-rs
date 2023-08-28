@@ -1,4 +1,4 @@
-use bullboard::{dashboard::Dashboard, events::Event, journal::Journal};
+use bullboard::{dashboard::Dashboard, events::Event, journal::Journal, event_store::{EventStore, MemoryEventStore}};
 use chrono::{NaiveDate, NaiveDateTime};
 use cucumber::{gherkin::Step, given, then, when, World};
 use pretty_assertions::assert_eq;
@@ -97,6 +97,13 @@ fn i_have_the_following_stock_transactions(world: &mut BullBoardWorld, step: &St
 fn i_add_a_journal_entry(world: &mut BullBoardWorld) {
     let event = Event::new_stocks_bought(10.0, "100.00 USD".to_string(), "AAPL".to_string());
     world.events.push(event);
+}
+
+#[when("I restart the application")]
+fn i_restart_the_application(world: &mut BullBoardWorld) {
+    let event_store = MemoryEventStore::new();
+    event_store.persist("ber", &world.events).unwrap();
+    world.events = event_store.get_events("ber").unwrap();
 }
 
 #[then("I should see the entry in my journal")]
