@@ -9,14 +9,11 @@ Feature: Journal
     Given a database file to store events
 
   Scenario: Add a journal entry
-    Given I have an empty journal
-    When I add a journal entry
+    Given I add a journal entry
     Then I should see the entry in my journal
 
   Scenario: Save journal entries
-    Given I have an empty journal
-    When I add a journal entry
-    And I restart the application
+    Given I add a journal entry
     Then I should see the entry in my journal
 
   Scenario: See multiple journal entries

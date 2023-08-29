@@ -65,11 +65,6 @@ fn i_have_the_following_stock_stransactions(world: &mut BullboardWorld, step: &S
     }
 }
 
-#[given("I have an empty journal")]
-fn i_have_an_empty_journal(_world: &mut BullboardWorld) {
-    // TODO: remove the journal file
-}
-
 #[when("I check my dashboard")]
 fn i_check_my_dashboard(world: &mut BullboardWorld) {
     world.run_command("dashboard");
@@ -134,14 +129,9 @@ fn i_have_the_following_stock_transactions(world: &mut BullboardWorld, step: &St
     }
 }
 
-#[when("I add a journal entry")] // TODO: merge with "I have the following stock transactions"
+#[given("I add a journal entry")] // TODO: merge with "I have the following stock transactions"
 fn i_add_a_journal_entry(world: &mut BullboardWorld) {
     world.run_command("add --type buy --amount 10 --price 100 --currency USD --identifier AAPL");
-}
-
-#[when("I restart the application")]
-fn i_restart_the_application(_world: &mut BullboardWorld) {
-    // no-op.  TODO: remove once we have the CLI setup, which is stateless by design
 }
 
 #[then("I should see the entry in my journal")]
