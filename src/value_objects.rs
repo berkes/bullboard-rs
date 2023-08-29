@@ -1,4 +1,5 @@
 use rust_decimal::{prelude::Zero, Decimal};
+use serde::{Serialize, Deserialize};
 use std::{
     collections::HashMap,
     fmt::Display,
@@ -84,7 +85,7 @@ impl Amounts {
 }
 
 /// A number of units of certain commodity
-#[derive(Default, Debug, Clone, PartialEq, Ord, PartialOrd, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Ord, PartialOrd, Eq, Serialize, Deserialize)]
 pub struct Amount {
     /// The value of the amount
     pub num: Decimal,
@@ -195,7 +196,7 @@ impl AddAssign for Amount {
 }
 
 /// A currency string
-#[derive(Hash, Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
+#[derive(Hash, Debug, Clone, PartialEq, PartialOrd, Ord, Eq, Serialize, Deserialize)]
 pub struct Currency(pub String);
 impl Currency {
     const DEFAULT: &'static str = "USD";
@@ -226,7 +227,7 @@ impl From<&str> for Currency {
 }
 
 /// A Stock Identifier
-#[derive(Debug, Clone, Eq, Hash, PartialEq)]
+#[derive(Debug, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct StockIdentifier {
     /// The ticker of the stock
     pub ticker: String,

@@ -1,50 +1,80 @@
-use bullboard::{dashboard::Dashboard, events::Event};
+use std::env;
+
+use bullboard::{
+    dashboard::Dashboard,
+    event_store::{EventStore, SqliteEventStore},
+    events::Event,
+    journal::Journal,
+};
 
 mod cli;
+mod demo;
 
-fn main() {
-    let _matches = cli::build_cli().get_matches();
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let matches = cli::build_cli().get_matches();
 
-    // Simulating events
-    let events = vec![
-        Event::new_stocks_bought(10.0, "150.0 USD".to_string(), "AAPL".to_string()),
-        Event::new_price_obtained(
-            chrono::NaiveDate::from_ymd_opt(2020, 1, 1)
-                .unwrap()
-                .and_hms_opt(0, 0, 0)
-                .unwrap(),
-            "170.0 USD".to_string(),
-            "AAPL".to_string(),
-        ),
-        Event::new_stocks_bought(5.0, "160.0 USD".to_string(), "AAPL".to_string()),
-        Event::new_price_obtained(
-            chrono::NaiveDate::from_ymd_opt(2020, 2, 1)
-                .unwrap()
-                .and_hms_opt(0, 0, 0)
-                .unwrap(),
-            "160.0 USD".to_string(),
-            "AAPL".to_string(),
-        ),
-        Event::new_stocks_bought(4.0, "13.37 EUR".to_string(), "ASR.AS".to_string()),
-        Event::new_price_obtained(
-            chrono::NaiveDate::from_ymd_opt(2020, 2, 1)
-                .unwrap()
-                .and_hms_opt(0, 0, 0)
-                .unwrap(),
-            "14.20 EUR".to_string(),
-            "ASR.AS".to_string(),
-        ),
-        Event::new_stocks_bought(8.0, "100.0 USD".to_string(), "MSFT".to_string()),
-        Event::new_price_obtained(
-            chrono::NaiveDate::from_ymd_opt(2020, 2, 1)
-                .unwrap()
-                .and_hms_opt(0, 0, 0)
-                .unwrap(),
-            "110.0 USD".to_string(),
-            "MSFT".to_string(),
-        ),
-    ];
+    let db_file = env::var("BULLBOARD_DB_PATH").unwrap_or("bullboard.db".to_string());
 
-    let dashboard = Dashboard::new(events);
-    println!("{}", dashboard);
+    let output: String = match matches.subcommand() {
+        Some(("demo", _)) => demo::demo().to_string(),
+        Some(("add", sub_cmd)) => {
+            handle_add(sub_cmd, &db_file);
+            "".to_string() // TODO: decide what we want to show to the user.
+        }
+        Some(("journal", _)) => {
+            let events = SqliteEventStore::new(&db_file)?.get_events("ber")?;
+            Journal::new(events).to_string()
+        }
+        Some(("dashboard", _)) => {
+            let events = SqliteEventStore::new(&db_file)?.get_events("ber")?;
+            Dashboard::new(events).to_string()
+        }
+        Some(("init", _)) => {
+            SqliteEventStore::new(&db_file)?.init().unwrap();
+            "".to_string()
+        }
+        Some((&_, _)) => todo!(),
+        None => unreachable!(),
+    };
+
+    print!("{}", output);
+
+    Ok(())
+}
+
+fn handle_add(sub_cmd: &clap::ArgMatches, db_file: &str) {
+    let today = chrono::Local::now().naive_local().to_string();
+
+    let etype = sub_cmd.get_one::<String>("type").unwrap();
+    let date = format!(
+        "{} 00:00:00",
+        sub_cmd.get_one::<String>("date").unwrap_or(&today)
+    );
+    let price = sub_cmd.get_one::<String>("price").unwrap();
+    let currency = sub_cmd.get_one::<String>("currency").unwrap();
+    let identifier = sub_cmd.get_one::<String>("identifier").unwrap();
+    let amount = sub_cmd.get_one::<String>("amount").unwrap();
+
+    let event = match etype.as_str() {
+        "buy" => Event::new_stocks_bought(
+            amount.parse::<f64>().unwrap(),
+            format!("{} {}", price, currency),
+            identifier.to_string(),
+        ),
+        "dividend" => {
+            Event::new_dividend_paid(format!("{} {}", price, currency), identifier.to_string())
+        }
+        "price" => Event::new_price_obtained(
+            chrono::NaiveDateTime::parse_from_str(&date, "%d-%m-%Y %H:%M:%S")
+                .unwrap_or_else(|_| panic!("Failed to parse date: {}", &date)),
+            format!("{} {}", price, currency),
+            identifier.to_string(),
+        ),
+        _ => panic!("Unknown event type"),
+    };
+
+    let event_store = SqliteEventStore::new(db_file).expect("Failed to open event store");
+    event_store
+        .persist("ber", &[event])
+        .expect("Failed to persist event");
 }

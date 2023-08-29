@@ -4,6 +4,9 @@ Feature: Dashboard
   As a user
   I want to see important numbers
 
+  Background:
+    Given a database file to store events
+
   Scenario: Portfolio Table
     Given I have the following stock transactions
       | Ticker  | Currency | Amount  | Price |

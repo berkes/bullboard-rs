@@ -1,8 +1,9 @@
 use crate::value_objects::{Amount, Currency, StockIdentifier};
 use chrono::NaiveDateTime;
+use serde::{Deserialize, Serialize};
 
 /// A stock was bought
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StocksBought {
     /// The amount of stocks of this type. Fractional, because some assets allow fractions
     pub amount: f64,
@@ -29,7 +30,7 @@ impl StocksBought {
 }
 
 /// A price was obtained for a stock
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PriceObtained {
     /// The amount of stocks of this type. Fractional, because some assets allow fractions
     pub obtained_at: NaiveDateTime,
@@ -56,7 +57,7 @@ impl PriceObtained {
 }
 
 /// A dividend was paid for a stock
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DividendPaid {
     /// The amount of dividend paid per stock on hand
     pub price: Amount,
@@ -72,7 +73,7 @@ impl DividendPaid {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
     StocksBought(StocksBought),
     PriceObtained(PriceObtained),

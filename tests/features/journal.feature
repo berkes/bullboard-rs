@@ -5,6 +5,9 @@ Feature: Journal
   I want to add entries to my journal
   And I want to see my journal entries
 
+  Background:
+    Given a database file to store events
+
   Scenario: Add a journal entry
     Given I have an empty journal
     When I add a journal entry
