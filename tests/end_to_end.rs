@@ -75,6 +75,11 @@ fn i_check_my_dashboard(world: &mut BullboardWorld) {
     world.run_command("dashboard");
 }
 
+#[when("I check my journal")]
+fn i_check_my_journal(world: &mut BullboardWorld) {
+    world.run_command("journal");
+}
+
 #[when(expr = "the prices change to the following values on {string}")]
 fn the_prices_change_to_the_following_values_on(
     world: &mut BullboardWorld,
@@ -144,9 +149,10 @@ fn i_should_see_the_entry_in_my_journal(world: &mut BullboardWorld) {
     world.run_command("journal");
     let actual = &world.last_command_output;
 
-    let expected = r#"My Journal
-     Date       Type    Ticker    Amount      Price          Total 
-  2020-01-01    Buy     AAPL        10.0    100.00 USD    1000.00 USD 
+    let expected = r#"
+My Journal
+  Date    Type    Ticker    Amount      Price          Total 
+          Buy     AAPL          10    100.00 USD    1000.00 USD 
 "#;
 
     assert_eq!(actual, expected);

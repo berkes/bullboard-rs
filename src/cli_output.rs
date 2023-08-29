@@ -4,7 +4,7 @@ use prettytable::{format::FormatBuilder, row, Table};
 
 use crate::{
     dashboard::Dashboard,
-    journal::{Journal, JournalEntry},
+    journal::{Journal, JournalEntry, JournalRowType},
     value_objects::{Amounts, Asset},
 };
 
@@ -35,10 +35,35 @@ impl Display for Journal {
         table.set_titles(
             row![c->"Date", c->"Type", c->"Ticker", c->"Amount", c->"Price", c->"Total"],
         );
-        self.entries.iter().for_each(|entry| {
-            if entry == &JournalEntry::Buy { table.add_row(row![l->"2020-01-01", l->"Buy", l->"AAPL", r->"10.0", r->"100.00 USD", r->"1000.00 USD"]); }
+        self.entries.iter().for_each(|entry| match entry {
+            JournalEntry::Buy(journal_row) => {
+                let date_s = if let Some(date) = journal_row.date {
+                    date.to_string()
+                } else {
+                    "".to_string()
+                };
+
+                table.add_row(row![
+                    l->date_s,
+                    l->journal_row.rtype,
+                    l->journal_row.identifier,
+                    r->journal_row.amount,
+                    r->journal_row.price,
+                    r->journal_row.total
+                ]);
+            }
+            _ => {}
         });
-        write!(f, "My Journal\n{}", table)
+        write!(f, "\nMy Journal\n{}", table)
+    }
+}
+
+impl Display for JournalRowType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            JournalRowType::Buy => write!(f, "Buy"),
+            JournalRowType::Dividend => write!(f, "Dividend"),
+        }
     }
 }
 

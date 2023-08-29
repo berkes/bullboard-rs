@@ -137,6 +137,12 @@ impl From<String> for Amount {
     }
 }
 
+impl From<&str> for Amount {
+    fn from(s: &str) -> Self {
+        Self::from(s.to_string())
+    }
+}
+
 impl<T> Mul<T> for Amount
 where
     Decimal: TryFrom<T>,
