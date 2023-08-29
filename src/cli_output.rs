@@ -4,7 +4,7 @@ use prettytable::{format::FormatBuilder, row, Table};
 
 use crate::{
     dashboard::Dashboard,
-    journal::{Journal, JournalEntry, JournalRowType},
+    journal::{Journal, JournalEntry, JournalRow, JournalRowType},
     value_objects::{Amounts, Asset},
 };
 
@@ -37,25 +37,31 @@ impl Display for Journal {
         );
         self.entries.iter().for_each(|entry| match entry {
             JournalEntry::Buy(journal_row) => {
-                let date_s = if let Some(date) = journal_row.date {
-                    date.to_string()
-                } else {
-                    "".to_string()
-                };
-
-                table.add_row(row![
-                    l->date_s,
-                    l->journal_row.rtype,
-                    l->journal_row.identifier,
-                    r->journal_row.amount,
-                    r->journal_row.price,
-                    r->journal_row.total
-                ]);
+                table.add_row(journal_row_to_row(journal_row));
             }
-            _ => {}
+            JournalEntry::Dividend(journal_row) => {
+                table.add_row(journal_row_to_row(journal_row));
+            }
         });
         write!(f, "\nMy Journal\n{}", table)
     }
+}
+
+fn journal_row_to_row(journal_row: &JournalRow) -> prettytable::Row {
+    let date_s = if let Some(date) = journal_row.date {
+        date.to_string()
+    } else {
+        "".to_string()
+    };
+
+    row![
+        l->date_s,
+        l->journal_row.rtype,
+        l->journal_row.identifier,
+        r->journal_row.amount,
+        r->journal_row.price,
+        r->journal_row.total
+    ]
 }
 
 impl Display for JournalRowType {

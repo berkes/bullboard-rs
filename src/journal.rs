@@ -43,7 +43,7 @@ impl Journal {
                     identifier: props.identifier.clone(),
                     amount: props.amount,
                     price: props.price.clone(),
-                    total: (props.price.clone() * props.amount).into(),
+                    total: (props.price.clone() * props.amount),
                 })),
                 Event::DividendPaid(props) => Some(JournalEntry::Dividend(JournalRow {
                     date: None,

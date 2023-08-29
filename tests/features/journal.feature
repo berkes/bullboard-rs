@@ -26,14 +26,15 @@ Feature: Journal
       | AAPL    | USD      | 1       | 90    |
       | TSLA    | USD      | 1       | 80    |
       | ESTC    | USD      | 3       | 20    |
-    When "MSFT" pays "0.62 USD" dividend per share on "17-11-2021"
+    When "ESTC" pays "0.62 USD" dividend per share on "17-11-2021"
     When I check my journal
     Then I should see the following text
       """
       My Journal
-        Date    Type    Ticker    Amount      Price        Total 
-                Buy     AAPL           1    60.00 USD    60.00 USD 
-                Buy     AAPL           1    90.00 USD    90.00 USD 
-                Buy     TSLA           1    80.00 USD    80.00 USD 
-                Buy     ESTC           3    20.00 USD    60.00 USD 
+        Date      Type      Ticker    Amount      Price        Total 
+                Buy         AAPL           1    60.00 USD    60.00 USD 
+                Buy         AAPL           1    90.00 USD    90.00 USD 
+                Buy         TSLA           1    80.00 USD    80.00 USD 
+                Buy         ESTC           3    20.00 USD    60.00 USD 
+                Dividend    ESTC           1     0.62 USD     0.62 USD 
       """

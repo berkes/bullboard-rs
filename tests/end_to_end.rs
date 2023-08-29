@@ -25,7 +25,7 @@ impl BullboardWorld {
         let output = Command::new(&self.bin)
             .args(&args)
             .output()
-            .expect(&format!("Failed to execute command: {} {}", &self.bin.to_string_lossy(), args.join(" ")));
+            .unwrap_or_else(|_| panic!("Failed to execute command: {} {}", &self.bin.to_string_lossy(), args.join(" ")));
 
         if !output.status.success() {
             panic!(
