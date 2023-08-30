@@ -38,7 +38,7 @@ impl Journal {
             .iter()
             .filter_map(|event| match event {
                 Event::StocksBought(props) => Some(JournalEntry::Buy(JournalRow {
-                    date: None,
+                    date: Some(props.created_at.date()),
                     rtype: JournalRowType::Buy,
                     identifier: props.identifier.clone(),
                     amount: props.amount,
@@ -46,7 +46,7 @@ impl Journal {
                     total: (props.price.clone() * props.amount),
                 })),
                 Event::DividendPaid(props) => Some(JournalEntry::Dividend(JournalRow {
-                    date: None,
+                    date: Some(props.created_at.date()),
                     rtype: JournalRowType::Dividend,
                     identifier: props.identifier.clone(),
                     amount: 1.0, // TODO: Change dividend to have price per share instead of total
@@ -64,22 +64,33 @@ impl Journal {
 #[cfg(test)]
 #[cfg(test)]
 mod tests {
+    use crate::date_utils::fixtures::iphone_launched_at;
+
     use super::*;
-    use chrono::NaiveDate;
     use pretty_assertions::assert_eq;
 
     #[test]
     fn journal_from_stocks_bought_events() {
         let events = vec![
-            Event::new_stocks_bought(10.0, "100.00 USD".to_string(), "AAPL".to_string()),
-            Event::new_stocks_bought(20.0, "200.00 USD".to_string(), "AAPL".to_string()),
+            Event::new_stocks_bought(
+                iphone_launched_at(),
+                10.0,
+                "100.00 USD".to_string(),
+                "AAPL".to_string(),
+            ),
+            Event::new_stocks_bought(
+                iphone_launched_at(),
+                20.0,
+                "200.00 USD".to_string(),
+                "AAPL".to_string(),
+            ),
         ];
         let journal = Journal::new(events);
         assert_eq!(
             journal.entries,
             vec![
                 JournalEntry::Buy(JournalRow {
-                    date: None,
+                    date: Some(iphone_launched_at().date()),
                     rtype: JournalRowType::Buy,
                     identifier: StockIdentifier::from("AAPL"),
                     amount: 10.0,
@@ -87,7 +98,7 @@ mod tests {
                     total: Amount::from("1000.00 USD")
                 }),
                 JournalEntry::Buy(JournalRow {
-                    date: None,
+                    date: Some(iphone_launched_at().date()),
                     rtype: JournalRowType::Buy,
                     identifier: StockIdentifier::from("AAPL"),
                     amount: 20.0,
@@ -101,15 +112,23 @@ mod tests {
     #[test]
     fn journal_from_dividend_paid_events() {
         let events = vec![
-            Event::new_dividend_paid("100.00 USD".to_string(), "AAPL".to_string()),
-            Event::new_dividend_paid("200.00 USD".to_string(), "AAPL".to_string()),
+            Event::new_dividend_paid(
+                iphone_launched_at(),
+                "100.00 USD".to_string(),
+                "AAPL".to_string(),
+            ),
+            Event::new_dividend_paid(
+                iphone_launched_at(),
+                "200.00 USD".to_string(),
+                "AAPL".to_string(),
+            ),
         ];
         let journal = Journal::new(events);
         assert_eq!(
             journal.entries,
             vec![
                 JournalEntry::Dividend(JournalRow {
-                    date: None,
+                    date: Some(iphone_launched_at().date()),
                     rtype: JournalRowType::Dividend,
                     identifier: StockIdentifier::from("AAPL"),
                     amount: 1.0,
@@ -117,7 +136,7 @@ mod tests {
                     total: Amount::from("100.00 USD")
                 }),
                 JournalEntry::Dividend(JournalRow {
-                    date: None,
+                    date: Some(iphone_launched_at().date()),
                     rtype: JournalRowType::Dividend,
                     identifier: StockIdentifier::from("AAPL"),
                     amount: 1.0,
@@ -132,18 +151,12 @@ mod tests {
     fn journal_from_price_obtained_events() {
         let events = vec![
             Event::new_price_obtained(
-                NaiveDate::from_ymd_opt(2020, 1, 1)
-                    .unwrap()
-                    .and_hms_opt(0, 0, 0)
-                    .unwrap(),
+                iphone_launched_at(),
                 "100.00 USD".to_string(),
                 "AAPL".to_string(),
             ),
             Event::new_price_obtained(
-                NaiveDate::from_ymd_opt(2020, 1, 2)
-                    .unwrap()
-                    .and_hms_opt(0, 0, 0)
-                    .unwrap(),
+                iphone_launched_at(),
                 "200.00 USD".to_string(),
                 "AAPL".to_string(),
             ),

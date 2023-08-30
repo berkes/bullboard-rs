@@ -117,11 +117,14 @@ impl Dashboard {
 mod tests {
     use chrono::{NaiveDate, NaiveDateTime};
 
+    use crate::date_utils::fixtures::iphone_launched_at;
+
     use super::*;
 
     #[test]
     fn test_that_stocks_bought_adds_asset() {
         let dashboard = Dashboard::new(vec![Event::new_stocks_bought(
+            iphone_launched_at(),
             10.0,
             "13.37 USD".to_string(),
             "AAPL".to_string(),
@@ -132,6 +135,7 @@ mod tests {
     #[test]
     fn test_that_stocks_bought_sets_dividend_to_zero() {
         let dashboard = Dashboard::new(vec![Event::new_stocks_bought(
+            iphone_launched_at(),
             10.0,
             "13.37 USD".to_string(),
             "AAPL".to_string(),
@@ -147,8 +151,8 @@ mod tests {
     #[test]
     fn test_stocks_bought_with_multiple_currencies() {
         let events = vec![
-            Event::new_stocks_bought(1.0, "42.00 USD".to_string(), "AAPL".to_string()),
-            Event::new_stocks_bought(1.0, "13.37 EUR".to_string(), "ASR-AS".to_string()),
+            Event::new_stocks_bought(iphone_launched_at(), 1.0, "42.00 USD".to_string(), "AAPL".to_string()),
+            Event::new_stocks_bought(iphone_launched_at(), 1.0, "13.37 EUR".to_string(), "ASR-AS".to_string()),
         ];
         let dashboard = Dashboard::new(events);
 
@@ -170,7 +174,7 @@ mod tests {
     #[test]
     fn test_stocks_bought_adds_totals() {
         let events = vec![
-            Event::new_stocks_bought(1.0, "42.00 USD".to_string(), "AAPL".to_string()),
+            Event::new_stocks_bought(iphone_launched_at(), 1.0, "42.00 USD".to_string(), "AAPL".to_string()),
             Event::new_price_obtained(
                 date_time(2020, 1, 1),
                 "42.00 USD".to_string(),
@@ -192,8 +196,8 @@ mod tests {
             .and_hms_opt(0, 0, 0)
             .unwrap();
         let events = vec![
-            Event::new_stocks_bought(1.0, "42.00 USD".to_string(), "AAPL".to_string()),
-            Event::new_stocks_bought(1.0, "13.37 EUR".to_string(), "ASR-AS".to_string()),
+            Event::new_stocks_bought(iphone_launched_at(), 1.0, "42.00 USD".to_string(), "AAPL".to_string()),
+            Event::new_stocks_bought(iphone_launched_at(), 1.0, "13.37 EUR".to_string(), "ASR-AS".to_string()),
             Event::new_price_obtained(date, "42.00 USD".to_string(), "AAPL".to_string()),
             Event::new_price_obtained(date, "13.37 EUR".to_string(), "ASR-AS".to_string()),
         ];
@@ -212,8 +216,8 @@ mod tests {
     fn test_that_dividend_paid_adds_dividend_to_asset() {
         let events = vec![
             // first we need to buy some stocks before getting dividend on them
-            Event::new_stocks_bought(10.0, "13.37 USD".to_string(), "AAPL".to_string()),
-            Event::new_dividend_paid("13.37 USD".to_string(), "AAPL".to_string()),
+            Event::new_stocks_bought(iphone_launched_at(), 10.0, "13.37 USD".to_string(), "AAPL".to_string()),
+            Event::new_dividend_paid(iphone_launched_at(), "13.37 USD".to_string(), "AAPL".to_string()),
         ];
         let dashboard = Dashboard::new(events);
 

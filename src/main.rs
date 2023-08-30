@@ -2,6 +2,7 @@ use std::env;
 
 use bullboard::{
     dashboard::Dashboard,
+    date_utils::{now, parse_datetime_or},
     event_store::{EventStore, SqliteEventStore},
     events::Event,
     journal::Journal,
@@ -43,13 +44,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn handle_add(sub_cmd: &clap::ArgMatches, db_file: &str) {
-    let today = chrono::Local::now().naive_local().to_string();
-
     let etype = sub_cmd.get_one::<String>("type").unwrap();
-    let date = format!(
-        "{} 00:00:00",
-        sub_cmd.get_one::<String>("date").unwrap_or(&today)
-    );
+
+    let date = sub_cmd.get_one::<String>("date");
+    let date_time = parse_datetime_or(date.cloned(), now).expect("Failed to parse date");
+
     let price = sub_cmd.get_one::<String>("price").unwrap();
     let currency = sub_cmd.get_one::<String>("currency").unwrap();
     let identifier = sub_cmd.get_one::<String>("identifier").unwrap();
@@ -57,16 +56,18 @@ fn handle_add(sub_cmd: &clap::ArgMatches, db_file: &str) {
 
     let event = match etype.as_str() {
         "buy" => Event::new_stocks_bought(
+            date_time,
             amount.parse::<f64>().unwrap(),
             format!("{} {}", price, currency),
             identifier.to_string(),
         ),
-        "dividend" => {
-            Event::new_dividend_paid(format!("{} {}", price, currency), identifier.to_string())
-        }
+        "dividend" => Event::new_dividend_paid(
+            date_time,
+            format!("{} {}", price, currency),
+            identifier.to_string(),
+        ),
         "price" => Event::new_price_obtained(
-            chrono::NaiveDateTime::parse_from_str(&date, "%d-%m-%Y %H:%M:%S")
-                .unwrap_or_else(|_| panic!("Failed to parse date: {}", &date)),
+            date_time,
             format!("{} {}", price, currency),
             identifier.to_string(),
         ),

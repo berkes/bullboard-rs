@@ -48,8 +48,9 @@ impl Display for Journal {
 }
 
 fn journal_row_to_row(journal_row: &JournalRow) -> prettytable::Row {
+    dbg!(&journal_row);
     let date_s = if let Some(date) = journal_row.date {
-        date.to_string()
+        date.format("%Y-%m-%d").to_string()
     } else {
         "".to_string()
     };

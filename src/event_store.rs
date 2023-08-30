@@ -1,11 +1,12 @@
-use rusqlite::{Connection, params};
-
-use crate::events::Event;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
+
+use rusqlite::{params, Connection};
+
+use crate::events::Event;
 
 pub trait EventStore {
     fn get_events(&self, aggregate_id: &str) -> Result<Vec<Event>, EventStoreError>;
@@ -72,6 +73,7 @@ impl SqliteEventStore {
             .execute(
                 "CREATE TABLE IF NOT EXISTS events (
                 id INTEGER PRIMARY KEY,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 aggregate_id TEXT NOT NULL,
                 event TEXT NOT NULL
             )",
@@ -86,7 +88,7 @@ impl EventStore for SqliteEventStore {
     fn get_events(&self, aggregate_id: &str) -> Result<Vec<Event>, EventStoreError> {
         let mut stmt = self
             .db
-            .prepare("SELECT event FROM events WHERE aggregate_id = ?")?;
+            .prepare("SELECT event FROM events WHERE aggregate_id = ? ORDER BY created_at ASC")?;
         let events = stmt
             .query_map([&aggregate_id], |row| {
                 let event: String = row.get(0)?;
@@ -106,12 +108,15 @@ impl EventStore for SqliteEventStore {
     }
 
     fn persist(&self, aggregate_id: &str, events: &[Event]) -> Result<(), EventStoreError> {
+        // TODO: we now store the created_at in both the serialized event and in the database.
         let mut stmt = self
             .db
-            .prepare("INSERT INTO events (aggregate_id, event) VALUES (?, ?)")?;
+            .prepare("INSERT INTO events (aggregate_id, created_at, event) VALUES (?, ?, ?)")?;
         for event in events {
-            let serialized_event = serde_json::to_string(event)?;
-            stmt.execute([&aggregate_id, &serialized_event.as_str()])
+            let dt = event.created_at();
+            let event = serde_json::to_string(event)?;
+
+            stmt.execute(params![&aggregate_id, &dt, &event])
                 .expect("Failed to insert");
         }
         Ok(())
@@ -132,8 +137,9 @@ impl From<serde_json::Error> for EventStoreError {
 
 #[cfg(test)]
 mod tests {
-    
     use tempfile::TempDir;
+
+    use crate::{date_utils::fixtures::iphone_launched_at, events::StocksBought};
 
     use super::*;
 
@@ -141,6 +147,7 @@ mod tests {
     fn test_memory_persist() {
         let event_store = MemoryEventStore::default();
         let events = vec![Event::new_stocks_bought(
+            iphone_launched_at(),
             10.0,
             "100.00 USD".to_string(),
             "AAPL".to_string(),
@@ -154,6 +161,7 @@ mod tests {
     fn test_memory_get_events() {
         let event_store = MemoryEventStore::default();
         let events = vec![Event::new_stocks_bought(
+            iphone_launched_at(),
             10.0,
             "100.00 USD".to_string(),
             "AAPL".to_string(),
@@ -174,6 +182,7 @@ mod tests {
     fn test_sqlite_persist() {
         let (db_file, event_store) = setup_db();
         let events = vec![Event::new_stocks_bought(
+            iphone_launched_at(),
             10.0,
             "100.00 USD".to_string(),
             "AAPL".to_string(),
@@ -190,6 +199,7 @@ mod tests {
     fn test_sqlite_get_events() {
         let (db_file, event_store) = setup_db();
         let events = vec![Event::new_stocks_bought(
+            iphone_launched_at(),
             10.0,
             "100.00 USD".to_string(),
             "AAPL".to_string(),
@@ -198,6 +208,42 @@ mod tests {
         let events = event_store.get_events("123").unwrap();
 
         assert_eq!(events.len(), 1);
+
+        db_file.close().unwrap();
+    }
+
+    #[test]
+    fn test_sqlite_get_events_sorts_by_created_at() {
+        // Insert MSFT event first, then AAPL event
+        // But post-date the AAPL event by 1 second, so it should be first
+        let (db_file, event_store) = setup_db();
+        let events = vec![
+            Event::new_stocks_bought(
+                iphone_launched_at() + chrono::Duration::seconds(1),
+                10.0,
+                "100.00 USD".to_string(),
+                "MSFT".to_string(),
+            ),
+            Event::new_stocks_bought(
+                iphone_launched_at(),
+                10.0,
+                "100.00 USD".to_string(),
+                "AAPL".to_string(),
+            ),
+        ];
+        event_store.persist("123", &events).unwrap();
+        let events = event_store.get_events("123").unwrap();
+
+        assert_eq!(events.len(), 2);
+        let tickers = events
+            .iter()
+            .map(|e| match e {
+                Event::StocksBought(StocksBought { identifier, .. }) => identifier.ticker.clone(),
+                _ => panic!("Unexpected event type"),
+            })
+            .collect::<Vec<String>>();
+
+        assert_eq!(tickers, vec!["AAPL", "MSFT"]);
 
         db_file.close().unwrap();
     }
@@ -218,7 +264,9 @@ mod tests {
         let db_path_str = db_path.to_str().expect("Failed to convert path to string");
 
         let event_store = SqliteEventStore::new(db_path_str).expect("Failed to create event store");
-        event_store.init().expect("Failed to initialize event store");
+        event_store
+            .init()
+            .expect("Failed to initialize event store");
 
         (temp_dir, event_store)
     }

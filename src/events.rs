@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 /// A stock was bought
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StocksBought {
+    /// Event creation time
+    pub created_at: NaiveDateTime,
     /// The amount of stocks of this type. Fractional, because some assets allow fractions
     pub amount: f64,
     /// The price paid for each stock
@@ -14,10 +16,11 @@ pub struct StocksBought {
 }
 
 impl StocksBought {
-    pub fn new(amount: f64, price: String, ticker: String) -> Self {
+    pub fn new(created_at: NaiveDateTime, amount: f64, price: String, ticker: String) -> Self {
         let price = Amount::from(price);
         let identifier = StockIdentifier::from(ticker);
         Self {
+            created_at,
             amount,
             price,
             identifier,
@@ -32,8 +35,8 @@ impl StocksBought {
 /// A price was obtained for a stock
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PriceObtained {
-    /// The amount of stocks of this type. Fractional, because some assets allow fractions
-    pub obtained_at: NaiveDateTime,
+    /// The time the price was obtained
+    pub created_at: NaiveDateTime,
     /// The price paid for each stock
     pub price: Amount,
     /// The ticker of the stock
@@ -41,11 +44,11 @@ pub struct PriceObtained {
 }
 
 impl PriceObtained {
-    pub fn new(obtained_at: NaiveDateTime, price: String, identifier: String) -> Self {
+    pub fn new(created_at: NaiveDateTime, price: String, identifier: String) -> Self {
         let price = Amount::from(price);
         let identifier = StockIdentifier::from(identifier);
         Self {
-            obtained_at,
+            created_at,
             price,
             identifier,
         }
@@ -59,6 +62,8 @@ impl PriceObtained {
 /// A dividend was paid for a stock
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DividendPaid {
+    /// The time the dividend was paid
+    pub created_at: NaiveDateTime,
     /// The amount of dividend paid per stock on hand
     pub price: Amount,
     /// The ticker of the stock
@@ -66,10 +71,10 @@ pub struct DividendPaid {
 }
 
 impl DividendPaid {
-    pub fn new(price: String, identifier: String) -> Self {
+    pub fn new(created_at: NaiveDateTime, price: String, identifier: String) -> Self {
         let price = Amount::from(price);
         let identifier = StockIdentifier::from(identifier);
-        Self { price, identifier }
+        Self { created_at, price, identifier }
     }
 }
 
@@ -81,22 +86,35 @@ pub enum Event {
 }
 
 impl Event {
-    pub fn new_stocks_bought(amount: f64, price: String, ticker: String) -> Self {
-        let stocks_bought = StocksBought::new(amount, price, ticker);
+    pub fn new_stocks_bought(
+        created_at: NaiveDateTime,
+        amount: f64,
+        price: String,
+        ticker: String,
+    ) -> Self {
+        let stocks_bought = StocksBought::new(created_at, amount, price, ticker);
         Event::StocksBought(stocks_bought)
     }
 
     pub fn new_price_obtained(
-        obtained_at: NaiveDateTime,
+        created_at: NaiveDateTime,
         price: String,
         identifier: String,
     ) -> Self {
-        let price_obtained = PriceObtained::new(obtained_at, price, identifier);
+        let price_obtained = PriceObtained::new(created_at, price, identifier);
         Event::PriceObtained(price_obtained)
     }
 
-    pub fn new_dividend_paid(price: String, identifier: String) -> Self {
-        let dividend_paid = DividendPaid::new(price, identifier);
+    pub fn new_dividend_paid(created_at: NaiveDateTime, price: String, identifier: String) -> Self {
+        let dividend_paid = DividendPaid::new(created_at, price, identifier);
         Event::DividendPaid(dividend_paid)
+    }
+
+    pub(crate) fn created_at(&self) -> NaiveDateTime {
+        match self {
+            Event::StocksBought(event) => event.created_at,
+            Event::PriceObtained(event) => event.created_at,
+            Event::DividendPaid(event) => event.created_at,
+        }
     }
 }
