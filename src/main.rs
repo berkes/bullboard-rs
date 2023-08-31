@@ -5,7 +5,7 @@ use bullboard::{
     date_utils::{now, parse_datetime_or},
     event_store::{EventStore, SqliteEventStore},
     events::Event,
-    journal::Journal,
+    journal::Journal, cqrs::CqrsFramework,
 };
 
 mod cli;
@@ -15,23 +15,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = cli::build_cli().get_matches();
 
     let db_file = env::var("BULLBOARD_DB_PATH").unwrap_or("bullboard.db".to_string());
+    let cqrs = CqrsFramework::new(SqliteEventStore::new(&db_file)?);
 
     let output: String = match matches.subcommand() {
         Some(("demo", _)) => demo::demo().to_string(),
         Some(("add", sub_cmd)) => {
-            handle_add(sub_cmd, &db_file);
+            handle_add(sub_cmd, cqrs);
             "".to_string() // TODO: decide what we want to show to the user.
         }
         Some(("journal", _)) => {
-            let events = SqliteEventStore::new(&db_file)?.get_events("ber")?;
+            let events = cqrs.store.get_events("ber")?;
             Journal::new(events).to_string()
         }
         Some(("dashboard", _)) => {
-            let events = SqliteEventStore::new(&db_file)?.get_events("ber")?;
+            let events = cqrs.store.get_events("ber")?;
             Dashboard::new(events).to_string()
         }
         Some(("init", _)) => {
-            SqliteEventStore::new(&db_file)?.init().unwrap();
+            cqrs.store.init().unwrap();
             "".to_string()
         }
         Some((&_, _)) => todo!(),
@@ -43,7 +44,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn handle_add(sub_cmd: &clap::ArgMatches, db_file: &str) {
+fn handle_add<T>(sub_cmd: &clap::ArgMatches, cqrs: CqrsFramework<T>)
+    where T: EventStore
+{
     let etype = sub_cmd.get_one::<String>("type").unwrap();
 
     let date = sub_cmd.get_one::<String>("date");
@@ -74,8 +77,7 @@ fn handle_add(sub_cmd: &clap::ArgMatches, db_file: &str) {
         _ => panic!("Unknown event type"),
     };
 
-    let event_store = SqliteEventStore::new(db_file).expect("Failed to open event store");
-    event_store
+    cqrs.store
         .persist("ber", &[event])
         .expect("Failed to persist event");
 }

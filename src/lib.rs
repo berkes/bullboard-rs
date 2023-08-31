@@ -1,3 +1,4 @@
+pub mod cqrs;
 pub mod event_store;
 pub mod events;
 pub mod value_objects;
