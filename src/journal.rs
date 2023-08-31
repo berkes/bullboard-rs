@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 
 use crate::{
-    events::Event,
+    events::AccountEvent,
     value_objects::{Amount, StockIdentifier},
 };
 
@@ -33,11 +33,11 @@ pub struct JournalRow {
 }
 
 impl Journal {
-    pub fn new(events: Vec<Event>) -> Self {
+    pub fn new(events: Vec<AccountEvent>) -> Self {
         let entries = events
             .iter()
             .filter_map(|event| match event {
-                Event::StocksBought(props) => Some(JournalEntry::Buy(JournalRow {
+                AccountEvent::StocksBought(props) => Some(JournalEntry::Buy(JournalRow {
                     date: Some(props.created_at.date()),
                     rtype: JournalRowType::Buy,
                     identifier: props.identifier.clone(),
@@ -45,7 +45,7 @@ impl Journal {
                     price: props.price.clone(),
                     total: (props.price.clone() * props.amount),
                 })),
-                Event::DividendPaid(props) => Some(JournalEntry::Dividend(JournalRow {
+                AccountEvent::DividendPaid(props) => Some(JournalEntry::Dividend(JournalRow {
                     date: Some(props.created_at.date()),
                     rtype: JournalRowType::Dividend,
                     identifier: props.identifier.clone(),
@@ -53,7 +53,7 @@ impl Journal {
                     price: props.price.clone(),
                     total: props.price.clone(),
                 })),
-                Event::PriceObtained { .. } => None,
+                AccountEvent::PriceObtained { .. } => None,
             })
             .collect::<Vec<JournalEntry>>();
 
@@ -72,13 +72,13 @@ mod tests {
     #[test]
     fn journal_from_stocks_bought_events() {
         let events = vec![
-            Event::new_stocks_bought(
+            AccountEvent::new_stocks_bought(
                 iphone_launched_at(),
                 10.0,
                 "100.00 USD".to_string(),
                 "AAPL".to_string(),
             ),
-            Event::new_stocks_bought(
+            AccountEvent::new_stocks_bought(
                 iphone_launched_at(),
                 20.0,
                 "200.00 USD".to_string(),
@@ -112,12 +112,12 @@ mod tests {
     #[test]
     fn journal_from_dividend_paid_events() {
         let events = vec![
-            Event::new_dividend_paid(
+            AccountEvent::new_dividend_paid(
                 iphone_launched_at(),
                 "100.00 USD".to_string(),
                 "AAPL".to_string(),
             ),
-            Event::new_dividend_paid(
+            AccountEvent::new_dividend_paid(
                 iphone_launched_at(),
                 "200.00 USD".to_string(),
                 "AAPL".to_string(),
@@ -150,12 +150,12 @@ mod tests {
     #[test]
     fn journal_from_price_obtained_events() {
         let events = vec![
-            Event::new_price_obtained(
+            AccountEvent::new_price_obtained(
                 iphone_launched_at(),
                 "100.00 USD".to_string(),
                 "AAPL".to_string(),
             ),
-            Event::new_price_obtained(
+            AccountEvent::new_price_obtained(
                 iphone_launched_at(),
                 "200.00 USD".to_string(),
                 "AAPL".to_string(),

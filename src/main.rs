@@ -4,7 +4,7 @@ use bullboard::{
     dashboard::Dashboard,
     date_utils::{now, parse_datetime_or},
     event_store::{EventStore, SqliteEventStore},
-    events::Event,
+    events::AccountEvent,
     journal::Journal, cqrs::CqrsFramework,
 };
 
@@ -58,18 +58,18 @@ fn handle_add<T>(sub_cmd: &clap::ArgMatches, cqrs: CqrsFramework<T>)
     let amount = sub_cmd.get_one::<String>("amount").unwrap();
 
     let event = match etype.as_str() {
-        "buy" => Event::new_stocks_bought(
+        "buy" => AccountEvent::new_stocks_bought(
             date_time,
             amount.parse::<f64>().unwrap(),
             format!("{} {}", price, currency),
             identifier.to_string(),
         ),
-        "dividend" => Event::new_dividend_paid(
+        "dividend" => AccountEvent::new_dividend_paid(
             date_time,
             format!("{} {}", price, currency),
             identifier.to_string(),
         ),
-        "price" => Event::new_price_obtained(
+        "price" => AccountEvent::new_price_obtained(
             date_time,
             format!("{} {}", price, currency),
             identifier.to_string(),

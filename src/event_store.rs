@@ -6,11 +6,11 @@ use std::sync::{Arc, Mutex};
 
 use rusqlite::{params, Connection};
 
-use crate::events::Event;
+use crate::events::AccountEvent;
 
 pub trait EventStore {
-    fn get_events(&self, aggregate_id: &str) -> Result<Vec<Event>, EventStoreError>;
-    fn persist(&self, aggregate_id: &str, events: &[Event]) -> Result<(), EventStoreError>;
+    fn get_events(&self, aggregate_id: &str) -> Result<Vec<AccountEvent>, EventStoreError>;
+    fn persist(&self, aggregate_id: &str, events: &[AccountEvent]) -> Result<(), EventStoreError>;
 }
 
 #[derive(Debug)]
@@ -36,11 +36,11 @@ impl Display for EventStoreError {
 // MemoryEventStore.
 #[derive(Default)]
 pub struct MemoryEventStore {
-    events: Arc<Mutex<HashMap<String, Vec<Event>>>>,
+    events: Arc<Mutex<HashMap<String, Vec<AccountEvent>>>>,
 }
 
 impl EventStore for MemoryEventStore {
-    fn get_events(&self, aggregate_id: &str) -> Result<Vec<Event>, EventStoreError> {
+    fn get_events(&self, aggregate_id: &str) -> Result<Vec<AccountEvent>, EventStoreError> {
         let events_map = self.events.lock().unwrap();
         if let Some(events) = events_map.get(aggregate_id) {
             Ok(events.clone())
@@ -49,7 +49,7 @@ impl EventStore for MemoryEventStore {
         }
     }
 
-    fn persist(&self, aggregate_id: &str, events: &[Event]) -> Result<(), EventStoreError> {
+    fn persist(&self, aggregate_id: &str, events: &[AccountEvent]) -> Result<(), EventStoreError> {
         let mut events_map = self.events.lock().unwrap();
         let aggregate_events = events_map.entry(aggregate_id.to_string()).or_default();
         aggregate_events.extend_from_slice(events);
@@ -85,7 +85,7 @@ impl SqliteEventStore {
 }
 
 impl EventStore for SqliteEventStore {
-    fn get_events(&self, aggregate_id: &str) -> Result<Vec<Event>, EventStoreError> {
+    fn get_events(&self, aggregate_id: &str) -> Result<Vec<AccountEvent>, EventStoreError> {
         let mut stmt = self
             .db
             .prepare("SELECT event FROM events WHERE aggregate_id = ? ORDER BY created_at ASC")?;
@@ -107,7 +107,7 @@ impl EventStore for SqliteEventStore {
         }
     }
 
-    fn persist(&self, aggregate_id: &str, events: &[Event]) -> Result<(), EventStoreError> {
+    fn persist(&self, aggregate_id: &str, events: &[AccountEvent]) -> Result<(), EventStoreError> {
         // TODO: we now store the created_at in both the serialized event and in the database.
         let mut stmt = self
             .db
@@ -146,7 +146,7 @@ mod tests {
     #[test]
     fn test_memory_persist() {
         let event_store = MemoryEventStore::default();
-        let events = vec![Event::new_stocks_bought(
+        let events = vec![AccountEvent::new_stocks_bought(
             iphone_launched_at(),
             10.0,
             "100.00 USD".to_string(),
@@ -160,7 +160,7 @@ mod tests {
     #[test]
     fn test_memory_get_events() {
         let event_store = MemoryEventStore::default();
-        let events = vec![Event::new_stocks_bought(
+        let events = vec![AccountEvent::new_stocks_bought(
             iphone_launched_at(),
             10.0,
             "100.00 USD".to_string(),
@@ -181,7 +181,7 @@ mod tests {
     #[test]
     fn test_sqlite_persist() {
         let (db_file, event_store) = setup_db();
-        let events = vec![Event::new_stocks_bought(
+        let events = vec![AccountEvent::new_stocks_bought(
             iphone_launched_at(),
             10.0,
             "100.00 USD".to_string(),
@@ -198,7 +198,7 @@ mod tests {
     #[test]
     fn test_sqlite_get_events() {
         let (db_file, event_store) = setup_db();
-        let events = vec![Event::new_stocks_bought(
+        let events = vec![AccountEvent::new_stocks_bought(
             iphone_launched_at(),
             10.0,
             "100.00 USD".to_string(),
@@ -218,13 +218,13 @@ mod tests {
         // But post-date the AAPL event by 1 second, so it should be first
         let (db_file, event_store) = setup_db();
         let events = vec![
-            Event::new_stocks_bought(
+            AccountEvent::new_stocks_bought(
                 iphone_launched_at() + chrono::Duration::seconds(1),
                 10.0,
                 "100.00 USD".to_string(),
                 "MSFT".to_string(),
             ),
-            Event::new_stocks_bought(
+            AccountEvent::new_stocks_bought(
                 iphone_launched_at(),
                 10.0,
                 "100.00 USD".to_string(),
@@ -238,7 +238,7 @@ mod tests {
         let tickers = events
             .iter()
             .map(|e| match e {
-                Event::StocksBought(StocksBought { identifier, .. }) => identifier.ticker.clone(),
+                AccountEvent::StocksBought(StocksBought { identifier, .. }) => identifier.ticker.clone(),
                 _ => panic!("Unexpected event type"),
             })
             .collect::<Vec<String>>();

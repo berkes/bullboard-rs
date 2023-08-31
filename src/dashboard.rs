@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use crate::events::{DividendPaid, Event, PriceObtained, StocksBought};
+use crate::events::{DividendPaid, AccountEvent, PriceObtained, StocksBought};
 use crate::value_objects::{Amount, Amounts, Asset, StockIdentifier};
 
 #[derive(Debug)]
 pub struct Dashboard {
-    events: Vec<Event>,
+    events: Vec<AccountEvent>,
     pub number_of_positions: f64,
     pub total_dividend: Amounts,
     pub total_buying_price: Amounts,
@@ -14,7 +14,7 @@ pub struct Dashboard {
 }
 
 impl Dashboard {
-    pub fn new(events: Vec<Event>) -> Self {
+    pub fn new(events: Vec<AccountEvent>) -> Self {
         let mut dashboard = Dashboard {
             events,
             number_of_positions: 0.0,
@@ -42,11 +42,11 @@ impl Dashboard {
             .amount
     }
 
-    fn handle_event(&mut self, generic_event: &Event) {
+    fn handle_event(&mut self, generic_event: &AccountEvent) {
         match generic_event {
-            Event::StocksBought(event) => self.handle_stocks_bought(event.clone()),
-            Event::PriceObtained(event) => self.handle_price_obtained(event.clone()),
-            Event::DividendPaid(event) => self.handle_dividend_paid(event.clone()),
+            AccountEvent::StocksBought(event) => self.handle_stocks_bought(event.clone()),
+            AccountEvent::PriceObtained(event) => self.handle_price_obtained(event.clone()),
+            AccountEvent::DividendPaid(event) => self.handle_dividend_paid(event.clone()),
         };
     }
 
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_that_stocks_bought_adds_asset() {
-        let dashboard = Dashboard::new(vec![Event::new_stocks_bought(
+        let dashboard = Dashboard::new(vec![AccountEvent::new_stocks_bought(
             iphone_launched_at(),
             10.0,
             "13.37 USD".to_string(),
@@ -134,7 +134,7 @@ mod tests {
 
     #[test]
     fn test_that_stocks_bought_sets_dividend_to_zero() {
-        let dashboard = Dashboard::new(vec![Event::new_stocks_bought(
+        let dashboard = Dashboard::new(vec![AccountEvent::new_stocks_bought(
             iphone_launched_at(),
             10.0,
             "13.37 USD".to_string(),
@@ -151,8 +151,8 @@ mod tests {
     #[test]
     fn test_stocks_bought_with_multiple_currencies() {
         let events = vec![
-            Event::new_stocks_bought(iphone_launched_at(), 1.0, "42.00 USD".to_string(), "AAPL".to_string()),
-            Event::new_stocks_bought(iphone_launched_at(), 1.0, "13.37 EUR".to_string(), "ASR-AS".to_string()),
+            AccountEvent::new_stocks_bought(iphone_launched_at(), 1.0, "42.00 USD".to_string(), "AAPL".to_string()),
+            AccountEvent::new_stocks_bought(iphone_launched_at(), 1.0, "13.37 EUR".to_string(), "ASR-AS".to_string()),
         ];
         let dashboard = Dashboard::new(events);
 
@@ -174,8 +174,8 @@ mod tests {
     #[test]
     fn test_stocks_bought_adds_totals() {
         let events = vec![
-            Event::new_stocks_bought(iphone_launched_at(), 1.0, "42.00 USD".to_string(), "AAPL".to_string()),
-            Event::new_price_obtained(
+            AccountEvent::new_stocks_bought(iphone_launched_at(), 1.0, "42.00 USD".to_string(), "AAPL".to_string()),
+            AccountEvent::new_price_obtained(
                 date_time(2020, 1, 1),
                 "42.00 USD".to_string(),
                 "AAPL".to_string(),
@@ -196,10 +196,10 @@ mod tests {
             .and_hms_opt(0, 0, 0)
             .unwrap();
         let events = vec![
-            Event::new_stocks_bought(iphone_launched_at(), 1.0, "42.00 USD".to_string(), "AAPL".to_string()),
-            Event::new_stocks_bought(iphone_launched_at(), 1.0, "13.37 EUR".to_string(), "ASR-AS".to_string()),
-            Event::new_price_obtained(date, "42.00 USD".to_string(), "AAPL".to_string()),
-            Event::new_price_obtained(date, "13.37 EUR".to_string(), "ASR-AS".to_string()),
+            AccountEvent::new_stocks_bought(iphone_launched_at(), 1.0, "42.00 USD".to_string(), "AAPL".to_string()),
+            AccountEvent::new_stocks_bought(iphone_launched_at(), 1.0, "13.37 EUR".to_string(), "ASR-AS".to_string()),
+            AccountEvent::new_price_obtained(date, "42.00 USD".to_string(), "AAPL".to_string()),
+            AccountEvent::new_price_obtained(date, "13.37 EUR".to_string(), "ASR-AS".to_string()),
         ];
         let dashboard = Dashboard::new(events);
 
@@ -216,8 +216,8 @@ mod tests {
     fn test_that_dividend_paid_adds_dividend_to_asset() {
         let events = vec![
             // first we need to buy some stocks before getting dividend on them
-            Event::new_stocks_bought(iphone_launched_at(), 10.0, "13.37 USD".to_string(), "AAPL".to_string()),
-            Event::new_dividend_paid(iphone_launched_at(), "13.37 USD".to_string(), "AAPL".to_string()),
+            AccountEvent::new_stocks_bought(iphone_launched_at(), 10.0, "13.37 USD".to_string(), "AAPL".to_string()),
+            AccountEvent::new_dividend_paid(iphone_launched_at(), "13.37 USD".to_string(), "AAPL".to_string()),
         ];
         let dashboard = Dashboard::new(events);
 

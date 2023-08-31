@@ -79,13 +79,13 @@ impl DividendPaid {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Event {
+pub enum AccountEvent {
     StocksBought(StocksBought),
     PriceObtained(PriceObtained),
     DividendPaid(DividendPaid),
 }
 
-impl Event {
+impl AccountEvent {
     pub fn new_stocks_bought(
         created_at: NaiveDateTime,
         amount: f64,
@@ -93,7 +93,7 @@ impl Event {
         ticker: String,
     ) -> Self {
         let stocks_bought = StocksBought::new(created_at, amount, price, ticker);
-        Event::StocksBought(stocks_bought)
+        AccountEvent::StocksBought(stocks_bought)
     }
 
     pub fn new_price_obtained(
@@ -102,19 +102,19 @@ impl Event {
         identifier: String,
     ) -> Self {
         let price_obtained = PriceObtained::new(created_at, price, identifier);
-        Event::PriceObtained(price_obtained)
+        AccountEvent::PriceObtained(price_obtained)
     }
 
     pub fn new_dividend_paid(created_at: NaiveDateTime, price: String, identifier: String) -> Self {
         let dividend_paid = DividendPaid::new(created_at, price, identifier);
-        Event::DividendPaid(dividend_paid)
+        AccountEvent::DividendPaid(dividend_paid)
     }
 
     pub(crate) fn created_at(&self) -> NaiveDateTime {
         match self {
-            Event::StocksBought(event) => event.created_at,
-            Event::PriceObtained(event) => event.created_at,
-            Event::DividendPaid(event) => event.created_at,
+            AccountEvent::StocksBought(event) => event.created_at,
+            AccountEvent::PriceObtained(event) => event.created_at,
+            AccountEvent::DividendPaid(event) => event.created_at,
         }
     }
 }
