@@ -1,5 +1,5 @@
 use rust_decimal::{prelude::Zero, Decimal};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fmt::Display,

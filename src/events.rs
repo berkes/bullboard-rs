@@ -74,7 +74,11 @@ impl DividendPaid {
     pub fn new(created_at: NaiveDateTime, price: String, identifier: String) -> Self {
         let price = Amount::from(price);
         let identifier = StockIdentifier::from(identifier);
-        Self { created_at, price, identifier }
+        Self {
+            created_at,
+            price,
+            identifier,
+        }
     }
 }
 

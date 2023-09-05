@@ -1,11 +1,12 @@
 use std::env;
 
 use bullboard::{
+    cqrs::CqrsFramework,
     dashboard::Dashboard,
     date_utils::{now, parse_datetime_or},
-    event_store::{EventStore, SqliteEventStore},
+    event_store::{sqlite::SqliteEventStore, EventStore},
     events::AccountEvent,
-    journal::Journal, cqrs::CqrsFramework,
+    journal::Journal,
 };
 
 mod cli;
@@ -45,7 +46,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn handle_add<T>(sub_cmd: &clap::ArgMatches, cqrs: CqrsFramework<T>)
-    where T: EventStore
+where
+    T: EventStore,
 {
     let etype = sub_cmd.get_one::<String>("type").unwrap();
 

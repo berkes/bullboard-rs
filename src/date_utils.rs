@@ -70,10 +70,12 @@ mod tests {
 
     #[test]
     fn test_parse_datetime_or_with_date_in_different_formats() {
-        ["2020-8-10".to_string(),
+        [
+            "2020-8-10".to_string(),
             "2020-08-10".to_string(),
             "10-8-2020".to_string(),
-            "10-08-2020".to_string()]
+            "10-08-2020".to_string(),
+        ]
         .iter()
         .for_each(|date_string| {
             assert_eq!(
