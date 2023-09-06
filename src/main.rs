@@ -12,6 +12,11 @@ use bullboard::{
 mod cli;
 mod demo;
 
+mod portfolio;
+
+#[cfg(test)]
+pub mod test_utils;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = cli::build_cli().get_matches();
 

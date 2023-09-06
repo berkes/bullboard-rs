@@ -1,3 +1,4 @@
+pub mod aggregate;
 pub mod cqrs;
 pub mod event_store;
 pub mod events;
